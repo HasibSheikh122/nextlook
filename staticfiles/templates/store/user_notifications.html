@@ -1,0 +1,229 @@
+{% extends 'store/base_store.html' %}
+
+{% block title %}Notifications - E-Shop{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="p-6 border-b">
+        <div class="flex justify-between items-center flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Notifications</h1>
+                <p class="text-gray-600 mt-1">Stay updated with your order status and important updates</p>
+            </div>
+            {% if notifications %}
+            <button onclick="markAllAsRead()" 
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-check-double mr-2"></i> Mark All as Read
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="p-6">
+        {% if notifications %}
+            <div class="space-y-3">
+                {% for notification in notifications %}
+                <div class="notification-item border rounded-lg p-4 hover:shadow-md transition 
+                            {% if not notification.seen %}bg-blue-50 border-blue-200{% endif %}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 flex-1">
+                            <div class="flex-shrink-0">
+                                {% if notification.order %}
+                                    {% if notification.order.order_status == 'Fullfilled' %}
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="fas fa-check-circle text-green-600"></i>
+                                        </div>
+                                    {% elif notification.order.order_status == 'Pending' %}
+                                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                                            <i class="fas fa-clock text-yellow-600"></i>
+                                        </div>
+                                    {% elif notification.order.order_status == 'Processing' %}
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i class="fas fa-sync-alt text-blue-600"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            <i class="fas fa-times-circle text-red-600"></i>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <i class="fas fa-bell text-purple-600"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex-1">
+                                <div class="flex flex-wrap justify-between gap-2">
+                                    <div>
+                                        {% if notification.order %}
+                                            <p class="font-semibold text-gray-800">
+                                                Order #{{ notification.order.oid }} - 
+                                                <span class="
+                                                    {% if notification.order.order_status == 'Fullfilled' %}text-green-600
+                                                    {% elif notification.order.order_status == 'Pending' %}text-yellow-600
+                                                    {% elif notification.order.order_status == 'Processing' %}text-blue-600
+                                                    {% else %}text-red-600{% endif %}
+                                                ">
+                                                    {{ notification.order.order_status }}
+                                                </span>
+                                            </p>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                Your order has been {{ notification.order.order_status|lower }}.
+                                                {% if notification.order.order_status == 'Fullfilled' %}
+                                                    Your package is on its way!
+                                                {% elif notification.order.order_status == 'Processing' %}
+                                                    We're preparing your items for shipment.
+                                                {% endif %}
+                                            </p>
+                                        {% else %}
+                                            <p class="font-semibold text-gray-800">General Notification</p>
+                                            <p class="text-sm text-gray-600 mt-1">You have a new notification from E-Shop.</p>
+                                        {% endif %}
+                                        
+                                        <div class="flex items-center mt-2 text-xs text-gray-400">
+                                            <i class="far fa-clock mr-1"></i>
+                                            <span>{{ notification.date|timesince }} ago</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        {% if notification.order %}
+                                        <a href="{% url 'store:user_order_detail' notification.order.oid %}" 
+                                           class="inline-flex items-center px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
+                                            <i class="fas fa-eye mr-1"></i> View Order
+                                        </a>
+                                        {% endif %}
+                                        <button onclick="markAsRead({{ notification.id }})" 
+                                                class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm">
+                                            <i class="fas fa-check mr-1"></i> Mark Read
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination (if needed) -->
+            {% if notifications.has_other_pages %}
+            <div class="flex justify-center mt-8">
+                <nav class="flex space-x-2">
+                    {% if notifications.has_previous %}
+                        <a href="?page={{ notifications.previous_page_number }}" 
+                           class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    {% for i in notifications.paginator.page_range %}
+                        {% if notifications.number == i %}
+                            <span class="px-3 py-2 bg-indigo-600 text-white rounded-lg">{{ i }}</span>
+                        {% elif i > notifications.number|add:'-3' and i < notifications.number|add:'3' %}
+                            <a href="?page={{ i }}" 
+                               class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if notifications.has_next %}
+                        <a href="?page={{ notifications.next_page_number }}" 
+                           class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+            
+            <!-- Notification Settings -->
+            <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Notification Settings</h3>
+                        <p class="text-sm text-gray-600">Manage how you receive notifications</p>
+                    </div>
+                    <button onclick="openSettings()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                        <i class="fas fa-cog mr-2"></i> Configure
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-bell-slash text-4xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">No Notifications</h3>
+                <p class="text-gray-500 mb-6">You're all caught up! No new notifications at this time.</p>
+                <div class="space-y-3">
+                    <a href="{% url 'store:user_dashboard' %}" 
+                       class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard
+                    </a>
+                    <div>
+                        <a href="{% url 'store:shop' %}" 
+                           class="inline-flex items-center text-indigo-600 hover:text-indigo-700">
+                            <i class="fas fa-shopping-cart mr-2"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function markAsRead(notificationId) {
+    fetch(`/store/notification/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function markAllAsRead() {
+    fetch('/store/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('All notifications marked as read', 'success');
+            location.reload();
+        }
+    });
+}
+
+function openSettings() {
+    showToast('Notification settings coming soon!', 'info');
+}
+
+// Auto-refresh notifications every 30 seconds
+setInterval(() => {
+    fetch('/store/notifications/unread-count/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.count > 0) {
+                const notificationBell = document.querySelector('.notification-bell');
+                if (notificationBell) {
+                    notificationBell.innerHTML = `<span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">${data.count}</span>`;
+                }
+            }
+        });
+}, 30000);
+</script>
+{% endblock %}

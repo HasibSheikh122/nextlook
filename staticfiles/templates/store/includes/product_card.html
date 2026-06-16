@@ -1,0 +1,85 @@
+{% load static %}
+{% load store_filters %}
+
+<div class="card product-card h-100 border-0 shadow-sm">
+    {% if product.old_price > product.price %}
+    <div class="position-absolute top-0 start-0 m-2 z-1">
+        <span class="badge bg-danger">
+            -{{ product.old_price|discount_percentage:product.price }}%
+        </span>
+    </div>
+    {% endif %}
+    
+    <div class="position-relative overflow-hidden">
+        <a href="{% url 'store:product_detail' product.slug %}">
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}" 
+                 style="height: 200px; object-fit: contain; padding: 20px; transition: transform 0.3s;">
+        </a>
+        
+        <div class="product-actions position-absolute bottom-0 start-0 end-0 bg-white p-2 text-center" 
+             style="transform: translateY(100%); transition: transform 0.3s;">
+            <button class="btn btn-primary btn-sm add-to-cart-btn" data-product-id="{{ product.id }}">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+            <button class="btn btn-outline-danger btn-sm add-to-wishlist-btn" data-product-id="{{ product.id }}">
+                {% if product.id in wishlist_products %}
+                <i class="fas fa-heart"></i>
+                {% else %}
+                <i class="far fa-heart"></i>
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none">
+            <h6 class="card-title text-dark mb-2">{{ product.title|truncatechars:40 }}</h6>
+        </a>
+        
+        <!-- Rating -->
+        <div class="mb-2">
+            {% with rating=product.rating|default:0|floatformat:"0"|add:"0" %}
+            {% for i in "12345"|make_list %}
+                {% if forloop.counter <= rating %}
+                    <i class="fas fa-star text-warning fa-sm"></i>
+                {% else %}
+                    <i class="far fa-star text-warning fa-sm"></i>
+                {% endif %}
+            {% endfor %}
+            {% endwith %}
+            <small class="text-muted">({{ product.rating_count }})</small>
+        </div>
+        
+        <!-- Price -->
+        <div class="mb-2">
+            {% if product.old_price > product.price %}
+            <span class="text-muted text-decoration-line-through me-2">${{ product.old_price|floatformat:2 }}</span>
+            {% endif %}
+            <span class="h5 text-primary fw-bold">${{ product.price|floatformat:2 }}</span>
+        </div>
+        
+        <!-- Stock Status -->
+        {% if product.stock_qty > 0 %}
+        <small class="text-success">
+            <i class="fas fa-check-circle"></i> In Stock ({{ product.stock_qty }})
+        </small>
+        {% else %}
+        <small class="text-danger">
+            <i class="fas fa-times-circle"></i> Out of Stock
+        </small>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+.product-card:hover .product-actions {
+    transform: translateY(0) !important;
+}
+.product-card:hover img {
+    transform: scale(1.05);
+}
+</style>

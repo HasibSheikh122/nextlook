@@ -1,0 +1,529 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if query %}
+        Search Results for "{{ query }}" - E-Shop
+    {% else %}
+        Search - E-Shop
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-8">
+    <!-- Sidebar Filters -->
+    <div class="lg:w-1/4">
+        <div class="bg-white rounded-lg shadow p-6 sticky top-20">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                <i class="fas fa-filter text-indigo-600 mr-2"></i> Filters
+            </h3>
+            
+            <form method="GET" id="filterForm">
+                <input type="hidden" name="q" value="{{ query }}">
+                
+                <!-- Price Range Filter -->
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">Price Range</h4>
+                    <div class="space-y-3">
+                        <div class="flex space-x-2">
+                            <input type="number" name="min_price" id="min_price" 
+                                   placeholder="Min" value="{{ request.GET.min_price }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <input type="number" name="max_price" id="max_price" 
+                                   placeholder="Max" value="{{ request.GET.max_price }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Filter -->
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">Categories</h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        {% for category in categories %}
+                        <label class="flex items-center">
+                            <input type="checkbox" name="category" value="{{ category.id }}" 
+                                   {% if category.id|stringformat:"s" in selected_categories %}checked{% endif %}
+                                   class="mr-2 rounded text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-gray-600">{{ category.title }}</span>
+                            <span class="text-xs text-gray-400 ml-auto">({{ category.product_count }})</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Rating Filter -->
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">Customer Rating</h4>
+                    <div class="space-y-2">
+                        {% for rating in ratings %}
+                        <label class="flex items-center">
+                            <input type="radio" name="rating" value="{{ rating }}" 
+                                   {% if request.GET.rating == rating|stringformat:"s" %}checked{% endif %}
+                                   class="mr-2 text-indigo-600 focus:ring-indigo-500">
+                            <div class="flex text-yellow-400">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= rating %}
+                                        <i class="fas fa-star text-sm"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-sm"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="text-xs text-gray-500 ml-2">& Up</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Stock Status -->
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">Availability</h4>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="in_stock" value="true" 
+                               {% if request.GET.in_stock %}checked{% endif %}
+                               class="mr-2 rounded text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-gray-600">In Stock Only</span>
+                    </label>
+                </div>
+                
+                <!-- Sort By -->
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">Sort By</h4>
+                    <select name="sort" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="-date" {% if request.GET.sort == '-date' %}selected{% endif %}>Newest First</option>
+                        <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="-price" {% if request.GET.sort == '-price' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="-views" {% if request.GET.sort == '-views' %}selected{% endif %}>Most Popular</option>
+                        <option value="-rating" {% if request.GET.sort == '-rating' %}selected{% endif %}>Highest Rated</option>
+                        <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Name: A to Z</option>
+                    </select>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-search mr-2"></i> Apply Filters
+                    </button>
+                    <button type="button" onclick="clearFilters()" class="w-full border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition">
+                        <i class="fas fa-undo-alt mr-2"></i> Clear All
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Search Results -->
+    <div class="lg:w-3/4">
+        <!-- Search Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        {% if query %}
+                            Search Results for "{{ query }}"
+                        {% else %}
+                            Search Products
+                        {% endif %}
+                    </h1>
+                    <p class="text-gray-600 mt-1">
+                        {% if product_count > 0 %}
+                            Found {{ product_count }} product{{ product_count|pluralize }}
+                        {% elif query %}
+                            No products found
+                        {% else %}
+                            Enter a search term to find products
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if query and product_count > 0 %}
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Sort by:</span>
+                    <select onchange="window.location.href=updateQueryString('sort', this.value)" 
+                            class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="-date" {% if request.GET.sort == '-date' %}selected{% endif %}>Newest</option>
+                        <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="-price" {% if request.GET.sort == '-price' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="-views" {% if request.GET.sort == '-views' %}selected{% endif %}>Popular</option>
+                        <option value="-rating" {% if request.GET.sort == '-rating' %}selected{% endif %}>Top Rated</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="mt-4">
+                <form method="GET" action="{% url 'store:search' %}" class="relative">
+                    <input type="text" name="q" value="{{ query }}" 
+                           placeholder="Search for products, brands, categories..."
+                           class="w-full px-4 py-3 pl-12 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                    <button type="submit" 
+                            class="absolute right-2 top-2 bg-indigo-600 text-white px-4 py-1 rounded-lg hover:bg-indigo-700 transition">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Results Display -->
+        {% if query %}
+            {% if products %}
+                <!-- View Toggle -->
+                <div class="flex justify-end mb-4">
+                    <div class="bg-white rounded-lg shadow p-1 inline-flex">
+                        <button onclick="setView('grid')" id="gridViewBtn" 
+                                class="px-3 py-1 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button onclick="setView('list')" id="listViewBtn" 
+                                class="px-3 py-1 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Grid View -->
+                <div id="gridView" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for product in products %}
+                    <div class="product-card bg-white rounded-lg shadow overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                        <a href="{% url 'store:product_detail' slug=product.slug %}">
+                            <div class="relative overflow-hidden bg-gray-100">
+                                <img src="{{ product.image.url }}" alt="{{ product.title }}" 
+                                     class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300">
+                                {% if product.old_price and product.old_price > product.price %}
+                                <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                                    Save ${{ product.old_price|floatformat:2 }}
+                                </div>
+                                {% endif %}
+                                {% if not product.in_stock or product.stock_qty <= 0 %}
+                                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <span class="bg-red-500 text-white px-3 py-1 rounded-lg font-semibold">Out of Stock</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <a href="{% url 'store:product_detail' slug=product.slug %}" 
+                                   class="font-semibold text-gray-800 hover:text-indigo-600 transition">
+                                    {{ product.title|truncatechars:35 }}
+                                </a>
+                                <button onclick="addToWishlist({{ product.id }})" 
+                                        class="text-gray-400 hover:text-red-500 transition">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center mb-2">
+                                <div class="flex text-yellow-400">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= product.rating|default:0 %}
+                                            <i class="fas fa-star text-xs"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-xs"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-xs text-gray-500 ml-2">({{ product.rating_count }})</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="text-xl font-bold text-indigo-600">${{ product.price|floatformat:2 }}</span>
+                                    {% if product.old_price %}
+                                        <span class="text-sm text-gray-400 line-through ml-2">${{ product.old_price|floatformat:2 }}</span>
+                                    {% endif %}
+                                </div>
+                                <button onclick="addToCart({{ product.id }})" 
+                                        {% if not product.in_stock or product.stock_qty <= 0 %}disabled{% endif %}
+                                        class="px-3 py-2 rounded-lg transition
+                                        {% if product.in_stock and product.stock_qty > 0 %}
+                                            bg-indigo-600 text-white hover:bg-indigo-700
+                                        {% else %}
+                                            bg-gray-300 text-gray-500 cursor-not-allowed
+                                        {% endif %}">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- List View -->
+                <div id="listView" class="hidden space-y-4">
+                    {% for product in products %}
+                    <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="md:w-48 relative">
+                                <img src="{{ product.image.url }}" alt="{{ product.title }}" 
+                                     class="w-full h-48 md:h-full object-cover">
+                                {% if not product.in_stock or product.stock_qty <= 0 %}
+                                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <span class="bg-red-500 text-white px-3 py-1 rounded-lg font-semibold text-sm">Out of Stock</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <a href="{% url 'store:product_detail' slug=product.slug %}" 
+                                           class="text-xl font-semibold text-gray-800 hover:text-indigo-600 transition">
+                                            {{ product.title }}
+                                        </a>
+                                        <div class="flex items-center mt-2">
+                                            <div class="flex text-yellow-400">
+                                                {% for i in "12345"|make_list %}
+                                                    {% if forloop.counter <= product.rating|default:0 %}
+                                                        <i class="fas fa-star text-sm"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-sm"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <span class="text-sm text-gray-500 ml-2">{{ product.rating_count }} reviews</span>
+                                        </div>
+                                        <p class="text-gray-600 mt-2">{{ product.description|truncatechars:150 }}</p>
+                                        <div class="flex items-center mt-2 text-sm text-gray-500">
+                                            <i class="fas fa-store mr-1"></i>
+                                            <span>{{ product.vendor.name|default:product.vendor.user.full_name }}</span>
+                                            <i class="fas fa-eye ml-3 mr-1"></i>
+                                            <span>{{ product.views }} views</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="addToWishlist({{ product.id }})" 
+                                            class="text-gray-400 hover:text-red-500 transition">
+                                        <i class="far fa-heart text-xl"></i>
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center mt-4 pt-4 border-t">
+                                    <div>
+                                        <span class="text-2xl font-bold text-indigo-600">${{ product.price|floatformat:2 }}</span>
+                                        {% if product.old_price %}
+                                            <span class="text-sm text-gray-400 line-through ml-2">${{ product.old_price|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <button onclick="addToCart({{ product.id }})" 
+                                            {% if not product.in_stock or product.stock_qty <= 0 %}disabled{% endif %}
+                                            class="px-6 py-2 rounded-lg transition font-semibold
+                                            {% if product.in_stock and product.stock_qty > 0 %}
+                                                bg-indigo-600 text-white hover:bg-indigo-700
+                                            {% else %}
+                                                bg-gray-300 text-gray-500 cursor-not-allowed
+                                            {% endif %}">
+                                        <i class="fas fa-shopping-cart mr-2"></i> 
+                                        {% if product.in_stock and product.stock_qty > 0 %}
+                                            Add to Cart
+                                        {% else %}
+                                            Out of Stock
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if products.has_other_pages %}
+                <div class="flex justify-center mt-8">
+                    <nav class="flex space-x-2">
+                        {% if products.has_previous %}
+                            <a href="?page={{ products.previous_page_number }}&{{ request.GET.urlencode }}" 
+                               class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        {% endif %}
+                        
+                        {% for i in products.paginator.page_range %}
+                            {% if products.number == i %}
+                                <span class="px-3 py-2 bg-indigo-600 text-white rounded-lg">{{ i }}</span>
+                            {% elif i > products.number|add:'-3' and i < products.number|add:'3' %}
+                                <a href="?page={{ i }}&{{ request.GET.urlencode }}" 
+                                   class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">{{ i }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if products.has_next %}
+                            <a href="?page={{ products.next_page_number }}&{{ request.GET.urlencode }}" 
+                               class="px-3 py-2 border rounded-lg hover:bg-gray-50 transition">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+                
+                <!-- Search Tips -->
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="font-semibold text-blue-800 mb-2">
+                        <i class="fas fa-lightbulb mr-2"></i> Search Tips
+                    </h4>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Use specific keywords for better results</li>
+                        <li>• Check spelling if no results found</li>
+                        <li>• Use filters to narrow down your search</li>
+                        <li>• Try searching by category or brand</li>
+                    </ul>
+                </div>
+            {% else %}
+                <!-- No Results -->
+                <div class="bg-white rounded-lg shadow p-12 text-center">
+                    <div class="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-search text-4xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
+                    <p class="text-gray-500 mb-6">We couldn't find any products matching "{{ query }}"</p>
+                    <div class="space-y-3">
+                        <div class="text-left max-w-md mx-auto">
+                            <p class="font-semibold text-gray-700 mb-2">Suggestions:</p>
+                            <ul class="text-gray-600 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Check your spelling</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Try more general keywords</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Try different keywords</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Browse our categories</li>
+                            </ul>
+                        </div>
+                        <a href="{% url 'store:shop' %}" 
+                           class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-store mr-2"></i> Browse All Products
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty Search State -->
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-500 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-5xl text-white"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">What are you looking for?</h3>
+                <p class="text-gray-500 mb-6">Search for products, categories, or brands</p>
+                <div class="max-w-md mx-auto">
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">Electronics</span>
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">Fashion</span>
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">Home & Living</span>
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">Sports</span>
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">Books</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// View Toggle
+function setView(view) {
+    if (view === 'grid') {
+        document.getElementById('gridView').classList.remove('hidden');
+        document.getElementById('listView').classList.add('hidden');
+        localStorage.setItem('searchView', 'grid');
+    } else {
+        document.getElementById('gridView').classList.add('hidden');
+        document.getElementById('listView').classList.remove('hidden');
+        localStorage.setItem('searchView', 'list');
+    }
+}
+
+// Load saved view preference
+const savedView = localStorage.getItem('searchView');
+if (savedView === 'list') {
+    setView('list');
+}
+
+// Clear all filters
+function clearFilters() {
+    window.location.href = "{% url 'store:search' %}?q={{ query }}";
+}
+
+// Update query string
+function updateQueryString(param, value) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set(param, value);
+    urlParams.delete('page');
+    return `${window.location.pathname}?${urlParams.toString()}`;
+}
+
+// Add to cart function
+function addToCart(productId) {
+    fetch('{% url "store:add_to_cart" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `product_id=${productId}&qty=1`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            updateCartCount();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error adding to cart', 'error');
+    });
+}
+
+// Add to wishlist function
+function addToWishlist(productId) {
+    fetch(`/store/add-to-wishlist/${productId}/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'info');
+    });
+}
+
+// Auto-submit on filter change
+document.querySelectorAll('input[type="checkbox"], input[type="radio"], select').forEach(element => {
+    element.addEventListener('change', () => {
+        if (element.name !== 'sort') {
+            document.getElementById('filterForm').submit();
+        }
+    });
+});
+</script>
+
+<style>
+.product-card {
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Custom scrollbar for filters */
+.max-h-48::-webkit-scrollbar {
+    width: 6px;
+}
+
+.max-h-48::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+</style>
+{% endblock %}

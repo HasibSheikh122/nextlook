@@ -1,0 +1,686 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NexLookBD - Premium Online Shopping{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --card-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        --hover-shadow: 0 20px 45px rgba(0,0,0,0.12);
+    }
+
+    body { 
+        perspective: 1000px; 
+        overflow-x: hidden; 
+    }
+
+    /* Product Card */
+    .product-card-3d {
+        background: var(--glass-bg);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 24px;
+        overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        box-shadow: var(--card-shadow);
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        perspective: 1200px;
+    }
+
+    .product-card-3d:hover {
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: var(--hover-shadow);
+    }
+
+    .product-card-3d:active { 
+        transform: scale(0.98); 
+    }
+
+    /* Image Container */
+    .img-container-3d {
+        position: relative;
+        overflow: hidden;
+        background: #f8f9fa;
+        padding: 20px;
+        height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-img-3d {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-style: preserve-3d;
+    }
+
+    .product-card-3d:hover .product-img-3d {
+        transform: rotateY(360deg) translateZ(30px);
+    }
+    
+    /* Badges */
+    .badge-3d {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 5;
+        background: var(--accent-gradient);
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .badge-new-3d {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: #0d6efd;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 30px;
+        z-index: 2;
+    }
+
+    /* Category Grid Layout */
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 25px;
+        padding: 10px;
+    }
+
+    /* Category Card */
+    .category-card {
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: transparent;
+    }
+
+    .category-card:hover {
+        transform: translateY(-8px);
+    }
+
+    /* Image Container - Circular */
+    .img-container {
+        width: 160px;
+        height: 160px;
+        margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .category-card:hover .img-container {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+        transform: scale(1.05);
+    }
+
+    /* Circular Image */
+    .category-img-circle {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: all 0.4s ease;
+    }
+
+    .category-card:hover .category-img-circle {
+        transform: scale(1.1);
+    }
+
+    /* Info Box */
+    .category-info-box {
+        margin-top: 15px;
+        padding: 10px 12px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .category-card:hover .category-info-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .category-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #333;
+        transition: color 0.3s ease;
+        text-transform: capitalize;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .category-card:hover .category-title {
+        color: white;
+    }
+
+    .category-count {
+        font-size: 12px;
+        color: #666;
+        transition: color 0.3s ease;
+    }
+
+    .category-card:hover .category-count {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Horizontal Scroll */
+    .horizontal-scroll-wrapper {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        padding-bottom: 10px;
+    }
+
+    .horizontal-scroll-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #d1d1d1;
+        border-radius: 10px;
+    }
+
+    .scroll-product-item {
+        min-width: 220px;
+        flex-shrink: 0;
+    }
+
+    /* Newsletter */
+    .bg-gradient-primary {
+        background: var(--primary-gradient);
+        border-radius: 30px;
+        margin: 40px 15px;
+    }
+
+    .custom-input-group {
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        padding: 8px;
+        border-radius: 50px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .custom-input-group input {
+        background: transparent;
+        border: none;
+        color: white;
+        padding-left: 20px;
+    }
+
+    .custom-input-group input::placeholder { 
+        color: rgba(255,255,255,0.7); 
+    }
+
+    .custom-input-group input:focus { 
+        box-shadow: none; 
+        background: transparent; 
+        color: white; 
+    }
+
+    .custom-input-group button {
+        background: white;
+        border: none;
+        padding: 8px 25px;
+        border-radius: 50px;
+        font-weight: 600;
+        color: #667eea;
+        transition: all 0.3s;
+    }
+
+    .custom-input-group button:hover {
+        transform: scale(1.05);
+        background: #f8f9fa;
+    }
+
+    /* Flash Sale */
+    .flash-sale-3d {
+        background: var(--accent-gradient);
+        border-radius: 30px;
+    }
+
+    .timer-3d {
+        background: rgba(0,0,0,0.2);
+        padding: 15px 25px;
+        border-radius: 20px;
+    }
+
+    /* Hero Section */
+    .hero-slider-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-slider .slick-slide {
+        position: relative;
+        height: 550px;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to right, rgba(0,0,0,0.7), transparent);
+        z-index: 1;
+    }
+
+    .hero-content-3d {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+        padding: 0 15px;
+        z-index: 2;
+    }
+
+    .hero-slider img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Section Title */
+    .section-title {
+        font-size: 2rem;
+        font-weight: 800;
+        position: relative;
+        display: inline-block;
+    }
+
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 60px;
+        height: 4px;
+        background: var(--primary-gradient);
+        border-radius: 2px;
+    }
+
+    /* Rating Stars */
+    .rating-3d i {
+        color: #ffc107;
+        font-size: 12px;
+    }
+
+    /* Slick Dots Customization */
+    .slick-dots {
+        bottom: 20px;
+        z-index: 10;
+    }
+
+    .slick-dots li button:before {
+        color: white;
+        font-size: 12px;
+        opacity: 0.5;
+    }
+
+    .slick-dots li.slick-active button:before {
+        color: white;
+        opacity: 1;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .img-container-3d {
+            height: 170px;
+        }
+        
+        .scroll-product-item {
+            min-width: 170px;
+        }
+        
+        .category-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .img-container {
+            width: 130px;
+            height: 130px;
+        }
+        
+        .hero-slider .slick-slide {
+            height: 400px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+        
+        .timer-3d {
+            padding: 10px 15px;
+        }
+        
+        .timer-3d .display-6 {
+            font-size: 1.5rem;
+        }
+        
+        .category-title {
+            font-size: 13px;
+        }
+        
+        .category-count {
+            font-size: 11px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .img-container {
+            width: 110px;
+            height: 110px;
+        }
+        
+        .category-info-box {
+            padding: 8px 10px;
+        }
+        
+        .category-title {
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Slider -->
+{% if banners %}
+<section class="hero-slider-wrapper mb-5">
+    <div class="hero-slider">
+        {% for banner in banners %}
+        <div class="position-relative" style="height: 550px;">
+            {% if banner.image %}
+            <img src="{{ banner.get_image_url }}" alt="{{ banner.title }}" class="w-100 h-100 object-fit-cover">
+            {% endif %}
+            <div class="hero-overlay"></div>
+            <div class="hero-content-3d container">
+                <div class="col-lg-7 text-start">
+                    <h1 class="display-3 fw-bold text-white mb-3" data-aos="fade-right">{{ banner.title }}</h1>
+                    <p class="lead text-white-50 mb-4" data-aos="fade-right" data-aos-delay="100">{{ banner.subtitle }}</p>
+                    <a href="{{ banner.button_link }}" class="btn btn-light btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg" data-aos="zoom-in" data-aos-delay="200">
+                        {{ banner.button_text }} <i class="fas fa-shopping-bag ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories Section -->
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <h2 class="section-title mb-0">Browse Categories</h2>
+        <span class="text-muted">Explore Collections</span>
+    </div>
+
+    <div class="category-grid">
+        {% for category in categories %}
+        <div class="category-scroll-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:'50' }}">
+            <a class="category-card" href="{% url 'store:category' category.slug %}">
+                <div class="img-container">
+                    <img src="{{ category.image.url }}" class="category-img-circle" alt="{{ category.title }}">
+                </div>
+                <div class="category-info-box">
+                    <h6 class="category-title mb-1">{{ category.title }}</h6>
+                    <p class="category-count mb-0">{{ category.product_set.count }} Items</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- New Arrivals Section -->
+{% if new_arrivals %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title">New Arrivals</h2>
+        <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-3">View All</a>
+    </div>
+
+    <div class="horizontal-scroll-wrapper">
+        {% for product in new_arrivals %}
+        <div class="scroll-product-item">
+            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                <div class="product-card-3d">
+                    <span class="badge-new-3d">New</span>
+                    <div class="img-container-3d">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
+                        {% endif %}
+                    </div>
+                    <div class="p-3 text-center">
+                        <h6 class="text-truncate fw-bold mb-1">{{ product.title }}</h6>
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <span class="text-primary fw-bold">${{ product.price|floatformat:0 }}</span>
+                            {% if product.old_price > product.price %}
+                            <span class="text-muted small text-decoration-line-through">${{ product.old_price|floatformat:0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Flash Sale -->
+{% if flash_sale %}
+<div class="container my-5">
+    <div class="flash-sale-3d p-4 p-md-5 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-7 text-white">
+                <h2 class="fw-black display-5 mb-2">HOT FLASH SALE!</h2>
+                <p class="opacity-75">Limited quantities available. Don't miss out!</p>
+            </div>
+            <div class="col-md-5 text-md-end">
+                <div class="timer-3d d-inline-flex gap-3 text-white">
+                    <div class="text-center">
+                        <span id="hours" class="display-6 d-block fw-bold">00</span>
+                        <small>Hrs</small>
+                    </div>
+                    <div class="display-6 fw-bold">:</div>
+                    <div class="text-center">
+                        <span id="minutes" class="display-6 d-block fw-bold">00</span>
+                        <small>Min</small>
+                    </div>
+                    <div class="display-6 fw-bold">:</div>
+                    <div class="text-center">
+                        <span id="seconds" class="display-6 d-block fw-bold">00</span>
+                        <small>Sec</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        {% for product in flash_sale %}
+        <div class="col-6 col-lg-2">
+            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                <div class="product-card-3d">
+                    <span class="badge-3d">Sale</span>
+                    <div class="img-container-3d">
+                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
+                    </div>
+                    <div class="p-3">
+                        <h6 class="text-truncate small fw-bold mb-1">{{ product.title }}</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-primary fw-bold">${{ product.price|floatformat:0 }}</span> 
+                            <span class="text-muted small text-decoration-line-through">${{ product.old_price|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Featured Products -->
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h2 class="section-title">Featured Products</h2>
+    </div>
+    <div class="row g-4">
+        {% for product in featured_products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none">
+                <div class="product-card-3d">
+                    <div class="img-container-3d">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
+                        {% endif %}
+                        {% if product.discount_percentage %}
+                        <span class="badge-3d">-{{ product.discount_percentage }}%</span>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 mt-auto text-dark">
+                        <div class="rating-3d small mb-2">
+                            {% with rating=product.average_rating|default:0 %}
+                                {% for i in "12345"|make_list %}
+                                    <i class="{% if forloop.counter <= rating %}fas{% else %}far{% endif %} fa-star"></i>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                        <h6 class="fw-bold text-truncate mb-1">{{ product.title }}</h6>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="price-box">
+                                <span class="fs-5 fw-bold text-primary">${{ product.price }}</span>
+                            </div>
+                            <div class="btn btn-primary btn-sm rounded-circle">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Newsletter -->
+<div class="container mb-5">
+    <div class="bg-gradient-primary p-5 text-center text-white" data-aos="zoom-in">
+        <h2 class="fw-bold mb-3">Join the NexLook Family</h2>
+        <p class="mb-4 opacity-75">Subscribe to get vouchers and weekly updates</p>
+        <form class="mx-auto" style="max-width: 500px;" method="POST" action="{% url 'store:newsletter_subscribe' %}">
+            {% csrf_token %}
+            <div class="custom-input-group d-flex">
+                <input type="email" name="email" class="form-control" placeholder="yourname@email.com" required>
+                <button type="submit" class="btn btn-white bg-white rounded-pill px-4 fw-bold">Subscribe</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+
+<script>
+$(document).ready(function() {
+    // Hero Slider
+    if ($('.hero-slider').length > 0) {
+        $('.hero-slider').slick({
+            infinite: true,
+            speed: 1000,
+            fade: true,
+            autoplay: true,
+            autoplaySpeed: 5000,
+            arrows: false,
+            dots: true,
+            pauseOnHover: false,
+            cssEase: 'linear'
+        });
+    }
+
+    // Countdown Timer - FIXED VERSION
+    function startTimer() {
+        var endTimeStr = "{{ flash_sale_end_time|date:'Y-m-d H:i:s' }}";
+        
+        if (!endTimeStr || endTimeStr === "") {
+            console.log("No end time provided");
+            return;
+        }
+        
+        var endTime = new Date(endTimeStr).getTime();
+        
+        // Check if endTime is valid
+        if (isNaN(endTime)) {
+            console.log("Invalid end time");
+            return;
+        }
+        
+        var timerInterval = setInterval(function() {
+            var now = new Date().getTime();
+            var diff = endTime - now;
+
+            if (diff < 0) {
+                clearInterval(timerInterval);
+                document.getElementById("hours").innerText = "00";
+                document.getElementById("minutes").innerText = "00";
+                document.getElementById("seconds").innerText = "00";
+                return;
+            }
+
+            var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
+            document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
+            document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
+        }, 1000);
+    }
+    
+    // Start timer if element exists
+    if(document.getElementById("hours")) {
+        startTimer();
+    }
+    
+    // Category card click handler
+    $('.category-card').on('click', function() {
+        window.location.href = $(this).data('url');
+    });
+});
+</script>
+{% endblock %}

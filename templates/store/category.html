@@ -1,0 +1,545 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} | NexLookBD - Premium E-Commerce Store{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Category Page Specific Styles */
+    .category-hero {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 3rem 0;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 2rem 2rem;
+    }
+    
+    .category-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0) 70%);
+        border-radius: 50%;
+    }
+    
+    .category-hero h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #ffffff, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 1rem;
+    }
+    
+    .category-description {
+        font-size: 1.1rem;
+        color: #cbd5e1;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .breadcrumb-custom {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .breadcrumb-custom .breadcrumb-item a {
+        color: #a78bfa;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-custom .breadcrumb-item.active {
+        color: #94a3b8;
+    }
+    
+    /* Product Card Enhancements */
+    .product-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .product-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 2;
+        background: #ef4444;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .product-img-wrapper {
+        position: relative;
+        background: #f8fafc;
+        overflow: hidden;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .product-img {
+        height: 220px;
+        object-fit: contain;
+        transition: transform 0.5s ease;
+    }
+    
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+    
+    .product-info {
+        padding: 1.25rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .product-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+        text-decoration: none;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .product-title:hover {
+        color: var(--primary-color);
+    }
+    
+    .product-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+    }
+    
+    .old-price {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        text-decoration: line-through;
+        margin-left: 0.5rem;
+    }
+    
+    .rating {
+        margin-bottom: 0.75rem;
+        color: #fbbf24;
+        font-size: 0.8rem;
+    }
+    
+    .product-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-add-cart {
+        flex: 1;
+        background: var(--primary-color);
+        border: none;
+        padding: 0.6rem;
+        border-radius: 40px;
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-add-cart:hover {
+        background: var(--primary-dark);
+        transform: scale(0.98);
+    }
+    
+    .btn-wishlist {
+        width: 40px;
+        height: 40px;
+        border-radius: 40px;
+        border: 1px solid var(--border-color);
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .btn-wishlist:hover {
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+    }
+    
+    /* Pagination */
+    .pagination-custom {
+        margin-top: 3rem;
+        margin-bottom: 2rem;
+        justify-content: center;
+    }
+    
+    .page-link-custom {
+        padding: 0.6rem 1rem;
+        margin: 0 4px;
+        border-radius: 12px;
+        background: white;
+        color: var(--text-color);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+        display: inline-block;
+    }
+    
+    .page-link-custom:hover,
+    .page-link-custom.active-page {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    /* Empty State */
+    .empty-category {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: white;
+        border-radius: 24px;
+    }
+    
+    .empty-icon {
+        font-size: 5rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+    
+    /* Filter Bar */
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .products-count {
+        color: var(--text-color);
+        font-size: 0.9rem;
+    }
+    
+    .sort-select {
+        padding: 0.5rem 1rem;
+        border-radius: 40px;
+        border: 1px solid var(--border-color);
+        background: white;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+        .category-hero h1 {
+            font-size: 2rem;
+        }
+        .product-img {
+            height: 160px;
+        }
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Category Hero Section -->
+<div class="category-hero" data-aos="fade-down">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-custom justify-content-center">
+                <li class="breadcrumb-item"><a href="{% url 'store:home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'store:shop' %}">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ category.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="text-center">{{ category.name }}</h1>
+        {% if category.description %}
+        <p class="category-description text-center">{{ category.description }}</p>
+        {% else %}
+        <p class="category-description text-center">Explore our exclusive collection of {{ category.name|lower }} products at unbeatable prices.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Filter Bar -->
+    <div class="filter-bar" data-aos="fade-up">
+        <div class="products-count">
+            <i class="fas fa-box-open me-2"></i>
+            Showing <strong>{{ products.start_index }}-{{ products.end_index }}</strong> of <strong>{{ products.paginator.count }}</strong> products
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            <label class="text-muted small mb-0">
+                <i class="fas fa-sort-amount-down-alt me-1"></i> Sort by:
+            </label>
+            <select class="sort-select" id="sortProducts">
+                <option value="default" {% if current_sort == 'default' %}selected{% endif %}>Default</option>
+                <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    {% if products %}
+    <div class="row g-4" data-aos="fade-up">
+        {% for product in products %}
+        <div class="col-lg-3 col-md-4 col-6">
+            <div class="product-card">
+                {% if product.discount_price %}
+                <div class="product-badge">
+                    {% widthratio product.discount_price product.price 100 as discount_percent %}
+                    {% with discount=100|add:discount_percent %}
+                    -{{ discount|floatformat:0 }}%
+                    {% endwith %}
+                </div>
+                {% endif %}
+                
+                <div class="product-img-wrapper">
+                    <a href="{% url 'store:product_detail' product.slug %}">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+                        {% else %}
+                        <img src="https://via.placeholder.com/300x300?text=No+Image" alt="{{ product.name }}" class="product-img">
+                        {% endif %}
+                    </a>
+                </div>
+                
+                <div class="product-info">
+                    <a href="{% url 'store:product_detail' product.slug %}" class="product-title">
+                        {{ product.name }}
+                    </a>
+                    
+                    <div class="rating">
+                        {% with avg_rating=product.average_rating|default:0 %}
+                        {% for i in "12345"|make_list %}
+                            {% if forloop.counter <= avg_rating %}
+                            <i class="fas fa-star"></i>
+                            {% elif forloop.counter <= avg_rating|add:0.5 %}
+                            <i class="fas fa-star-half-alt"></i>
+                            {% else %}
+                            <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="text-muted ms-1">({{ product.reviews_count|default:0 }})</span>
+                        {% endwith %}
+                    </div>
+                    
+                    <div class="product-price">
+                        {% if product.discount_price %}
+                        ৳{{ product.discount_price }}
+                        <span class="old-price">৳{{ product.price }}</span>
+                        {% else %}
+                        ৳{{ product.price }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-actions">
+                        <button class="btn-add-cart add-to-cart-btn" data-product-id="{{ product.id }}">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                        <button class="btn-wishlist add-to-wishlist-btn" data-product-id="{{ product.id }}">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <nav aria-label="Category pagination">
+        <ul class="pagination pagination-custom">
+            {% if products.has_previous %}
+            <li class="page-item">
+                <a class="page-link-custom" href="?page={{ products.previous_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in products.paginator.page_range %}
+                {% if products.number == num %}
+                <li class="page-item">
+                    <span class="page-link-custom active-page">{{ num }}</span>
+                </li>
+                {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link-custom" href="?page={{ num }}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link-custom" href="?page={{ products.next_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-category" data-aos="zoom-in">
+        <div class="empty-icon">
+            <i class="fas fa-box-open"></i>
+        </div>
+        <h3 class="mb-3">No Products Found</h3>
+        <p class="text-muted mb-4">
+            We couldn't find any products in the <strong>{{ category.name }}</strong> category at the moment.
+        </p>
+        <a href="{% url 'store:shop' %}" class="btn btn-primary rounded-pill px-4 py-2">
+            <i class="fas fa-arrow-left me-2"></i> Browse All Categories
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sort functionality
+    $('#sortProducts').on('change', function() {
+        const sortValue = $(this).val();
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('sort', sortValue);
+        currentUrl.searchParams.set('page', 1);
+        window.location.href = currentUrl.toString();
+    });
+    
+    // Add to Cart AJAX
+    $(document).on('click', '.add-to-cart-btn', function(e) {
+        e.preventDefault();
+        const productId = $(this).data('product-id');
+        const btn = $(this);
+        const originalHtml = btn.html();
+        
+        $.ajax({
+            url: '{% url "store:add_to_cart" %}',
+            method: 'POST',
+            data: {
+                'product_id': productId,
+                'qty': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    btn.html('<i class="fas fa-check"></i> Added!');
+                    btn.removeClass('btn-add-cart').css('background', '#10b981');
+                    
+                    setTimeout(() => {
+                        btn.html(originalHtml);
+                        btn.removeAttr('style').addClass('btn-add-cart');
+                    }, 2000);
+                    
+                    // Update cart count in navbar
+                    if (response.cart_count !== undefined) {
+                        $('.cart-badge-count').text(response.cart_count).show();
+                        if (response.cart_count === 0) {
+                            $('.cart-badge-count').hide();
+                        }
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert(response.message || 'Error adding to cart');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 403) {
+                    alert('Please login to add items to cart');
+                    window.location.href = '{% url "accounts:login" %}';
+                } else {
+                    alert('Error adding to cart. Please try again.');
+                }
+            }
+        });
+    });
+    
+    // Wishlist Toggle
+    $(document).on('click', '.add-to-wishlist-btn', function(e) {
+        e.preventDefault();
+        const productId = $(this).data('product-id');
+        const btn = $(this);
+        const icon = btn.find('i');
+        
+        $.ajax({
+            url: `/store/add-to-wishlist/${productId}/`,
+            method: 'GET',
+            success: function(response) {
+                if (icon.hasClass('far')) {
+                    icon.removeClass('far').addClass('fas text-danger');
+                    btn.css('border-color', '#ef4444');
+                } else {
+                    icon.removeClass('fas text-danger').addClass('far');
+                    btn.css('border-color', '');
+                }
+            },
+            error: function() {
+                alert('Please login to add to wishlist');
+                window.location.href = '{% url "accounts:login" %}';
+            }
+        });
+    });
+    
+    // Initialize wishlist heart status from localStorage or server
+    function checkWishlistStatus() {
+        $('.add-to-wishlist-btn').each(function() {
+            const productId = $(this).data('product-id');
+            $.get(`/store/check-wishlist/${productId}/`, function(response) {
+                if (response.in_wishlist) {
+                    const btn = $(`.add-to-wishlist-btn[data-product-id="${productId}"]`);
+                    btn.find('i').removeClass('far').addClass('fas text-danger');
+                    btn.css('border-color', '#ef4444');
+                }
+            });
+        });
+    }
+    
+    // Run on page load
+    if (typeof checkWishlistStatus === 'function') {
+        checkWishlistStatus();
+    }
+</script>
+{% endblock %}

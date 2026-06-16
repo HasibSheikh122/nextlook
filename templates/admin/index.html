@@ -1,0 +1,51 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+
+{{ block.super }}
+
+<hr>
+
+<div style="
+background:white;
+padding:25px;
+border-radius:20px;
+margin-top:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+">
+
+    <h2 style="margin-bottom:20px;">
+        Sales Analytics
+    </h2>
+
+    <canvas id="salesChart"></canvas>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const ctx = document.getElementById('salesChart');
+
+new Chart(ctx, {
+    type: 'bar',
+
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+
+        datasets: [{
+            label: 'Orders',
+            data: [12, 19, 8, 15, 22, 30],
+            borderWidth: 2,
+        }]
+    },
+
+    options: {
+        responsive: true
+    }
+});
+
+</script>
+
+{% endblock %}

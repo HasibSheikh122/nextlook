@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - E-Shop{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Checkout Form -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-6 border-b">
+                <h1 class="text-2xl font-bold text-gray-800">Checkout</h1>
+                <p class="text-gray-600 mt-1">Complete your order information</p>
+            </div>
+            
+            <form method="POST" id="checkoutForm">
+                {% csrf_token %}
+                
+                <!-- Personal Information -->
+                <div class="p-6 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-user text-indigo-600 mr-2"></i> Personal Information
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                            <input type="text" name="full_name" required 
+                                   value="{{ profile.full_name|default:request.user.full_name }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                            <input type="email" name="email" required 
+                                   value="{{ request.user.email }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                            <input type="tel" name="mobile" required 
+                                   value="{{ profile.phone|default:request.user.phone }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shipping Address -->
+                <div class="p-6 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-map-marker-alt text-indigo-600 mr-2"></i> Shipping Address
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Street Address *</label>
+                            <input type="text" name="address" required 
+                                   value="{{ profile.address }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                   placeholder="House number, street name">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                                <input type="text" name="city" required 
+                                       value="{{ profile.city }}"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                                <input type="text" name="state" required 
+                                       value="{{ profile.state }}"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+                                <select name="country" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                    <option value="">Select Country</option>
+                                    <option value="USA" {% if profile.country == 'USA' %}selected{% endif %}>United States</option>
+                                    <option value="UK" {% if profile.country == 'UK' %}selected{% endif %}>United Kingdom</option>
+                                    <option value="Canada" {% if profile.country == 'Canada' %}selected{% endif %}>Canada</option>
+                                    <option value="Australia" {% if profile.country == 'Australia' %}selected{% endif %}>Australia</option>
+                                    <option value="Bangladesh" {% if profile.country == 'Bangladesh' %}selected{% endif %}>Bangladesh</option>
+                                    <option value="India" {% if profile.country == 'India' %}selected{% endif %}>India</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Notes -->
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-pen text-indigo-600 mr-2"></i> Order Notes (Optional)
+                    </h2>
+                    <textarea name="notes" rows="3" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              placeholder="Special instructions for delivery..."></textarea>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Order Summary -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-lg shadow sticky top-20">
+            <div class="p-6 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-shopping-cart text-indigo-600 mr-2"></i> Order Summary
+                </h2>
+            </div>
+            
+            <!-- Cart Items -->
+            <div class="p-6 border-b max-h-96 overflow-y-auto">
+                {% for item in cart_items %}
+                <div class="flex items-center space-x-3 mb-4 pb-4 border-b last:border-0 last:mb-0 last:pb-0">
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
+                         class="w-16 h-16 object-cover rounded">
+                    <div class="flex-1">
+                        <a href="{% url 'store:product_detail' slug=item.product.slug %}" 
+                           class="font-semibold text-gray-800 hover:text-indigo-600 text-sm">
+                            {{ item.product.title|truncatechars:30 }}
+                        </a>
+                        {% if item.size %}
+                        <p class="text-xs text-gray-500">Size: {{ item.size }}</p>
+                        {% endif %}
+                        {% if item.color %}
+                        <p class="text-xs text-gray-500">Color: {{ item.color }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500">Quantity: {{ item.qty }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-indigo-600">${{ item.sub_total|floatformat:2 }}</p>
+                        <p class="text-xs text-gray-500">${{ item.price|floatformat:2 }} each</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Price Breakdown -->
+            <div class="p-6 border-b">
+                <div class="space-y-2">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Subtotal:</span>
+                        <span>${{ subtotal|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Shipping:</span>
+                        <span>${{ shipping|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Tax (10%):</span>
+                        <span>${{ tax|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Service Fee:</span>
+                        <span>${{ service_fee|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between pt-2 border-t text-lg font-bold">
+                        <span>Total:</span>
+                        <span class="text-indigo-600">${{ total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coupon Code -->
+            <div class="p-6 border-b">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Coupon Code</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="couponCode" placeholder="Enter coupon code" 
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <button type="button" onclick="applyCoupon()" 
+                            class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        Apply
+                    </button>
+                </div>
+                <div id="couponMessage" class="mt-2 text-sm"></div>
+            </div>
+            
+            <!-- Place Order Button -->
+            <div class="p-6">
+                <button type="submit" form="checkoutForm" 
+                        class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                    <i class="fas fa-credit-card mr-2"></i> Proceed to Payment
+                </button>
+                
+                <div class="mt-4 text-center">
+                    <a href="{% url 'store:cart' %}" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Cart
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyCoupon() {
+    const couponCode = document.getElementById('couponCode').value;
+    if (!couponCode) {
+        showToast('Please enter a coupon code', 'error');
+        return;
+    }
+    
+    fetch('{% url "store:apply_coupon" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: `coupon_code=${couponCode}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Coupon applied successfully!', 'success');
+            location.reload();
+        } else {
+            document.getElementById('couponMessage').innerHTML = 
+                `<span class="text-red-600">${data.message}</span>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error applying coupon', 'error');
+    });
+}
+
+// Form validation
+document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('border-red-500');
+            isValid = false;
+        } else {
+            field.classList.remove('border-red-500');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        showToast('Please fill in all required fields', 'error');
+    }
+});
+</script>
+{% endblock %}

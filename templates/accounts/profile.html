@@ -1,0 +1,437 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Profile - AuthSystem{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ==================== Layout with Sidebar ==================== */
+.profile-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 25px;
+    max-width: calc(100% - 280px);
+}
+
+/* Profile Card */
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 32px 24px;
+    text-align: center;
+    color: white;
+}
+
+.profile-avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    object-fit: cover;
+    margin: 0 auto;
+}
+
+.profile-avatar-placeholder {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.profile-avatar-placeholder i {
+    font-size: 64px;
+    color: #667eea;
+}
+
+.section-title {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.section-title i {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    ring: 2px solid rgba(102,126,234,0.2);
+}
+
+.form-input.file-input {
+    padding: 8px;
+    background: #f9fafb;
+}
+
+.form-error {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Buttons */
+.btn-cancel {
+    padding: 10px 24px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #4b5563;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-cancel:hover {
+    background: #f9fafb;
+    transform: translateY(-1px);
+}
+
+.btn-save {
+    padding: 10px 24px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-save:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+}
+
+/* Messages */
+.message-container {
+    margin-bottom: 20px;
+}
+
+.message-success {
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.message-error {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Mobile Responsive */
+@media(max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        max-width: 100%;
+        padding: 15px;
+        padding-top: 80px;
+    }
+    
+    .profile-container {
+        margin: 0;
+    }
+    
+    .profile-header {
+        padding: 24px 16px;
+    }
+    
+    .profile-avatar,
+    .profile-avatar-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-avatar-placeholder i {
+        font-size: 50px;
+    }
+    
+    .profile-header h2 {
+        font-size: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .btn-save, .btn-cancel {
+        padding: 8px 20px;
+        font-size: 14px;
+    }
+}
+
+@media(max-width: 640px) {
+    .main-content {
+        padding: 12px;
+        padding-top: 75px;
+    }
+    
+    .profile-container {
+        margin: 0;
+    }
+    
+    .profile-header {
+        padding: 20px 12px;
+    }
+    
+    .profile-avatar,
+    .profile-avatar-placeholder {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-avatar-placeholder i {
+        font-size: 40px;
+    }
+    
+    .profile-header h2 {
+        font-size: 18px;
+    }
+    
+    .profile-header p {
+        font-size: 13px;
+    }
+    
+    .section-title h3 {
+        font-size: 16px;
+    }
+    
+    .form-label {
+        font-size: 13px;
+    }
+    
+    .form-input {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .btn-save, .btn-cancel {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+@media(max-width: 480px) {
+    .main-content {
+        padding: 10px;
+        padding-top: 70px;
+    }
+    
+    .form-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .btn-save, .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-layout">
+    <!-- Include Sidebar -->
+    {% include 'store/sidebar.html' %}
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="profile-container">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <!-- Profile Header -->
+                <div class="profile-header">
+                    <div class="relative inline-block">
+                        {% if profile.image %}
+                            <img src="{{ profile.image.url }}" alt="{{ user.full_name }}" class="profile-avatar">
+                        {% else %}
+                            <div class="profile-avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h2 class="text-2xl font-bold mt-4">{{ user.full_name|default:user.email }}</h2>
+                    <p class="text-indigo-100">@{{ user.username }}</p>
+                </div>
+                
+                <!-- Messages -->
+                {% if messages %}
+                <div class="px-8 pt-6 message-container">
+                    {% for message in messages %}
+                        <div class="message-{{ message.tags }}">
+                            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Profile Edit Form -->
+                <div class="p-8">
+                    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <div class="section-title">
+                            <h3>
+                                <i class="fas fa-user"></i> Personal Information
+                            </h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {% for field in user_form %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                    {% if field.field.required %}
+                                        <span class="text-red-500">*</span>
+                                    {% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <p class="form-error">{{ field.errors.0 }}</p>
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <p class="text-gray-500 text-xs mt-1">{{ field.help_text }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="section-title mt-6">
+                            <h3>
+                                <i class="fas fa-info-circle"></i> Additional Information
+                            </h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {% for field in profile_form %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                    {% if field.field.required %}
+                                        <span class="text-red-500">*</span>
+                                    {% endif %}
+                                </label>
+                                {% if field.name == 'image' %}
+                                    <div class="mt-1">
+                                        {{ field }}
+                                        {% if profile.image %}
+                                            <p class="text-gray-500 text-xs mt-1">
+                                                Current: <a href="{{ profile.image.url }}" target="_blank" class="text-indigo-600">View Image</a>
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    {{ field }}
+                                {% endif %}
+                                {% if field.errors %}
+                                    <p class="form-error">{{ field.errors.0 }}</p>
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <p class="text-gray-500 text-xs mt-1">{{ field.help_text }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="flex justify-end space-x-4 pt-6 form-actions">
+                            <a href="{% url 'store:user_dashboard' %}" class="btn-cancel">
+                                <i class="fas fa-times mr-2"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-save">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add styling for form inputs
+document.addEventListener('DOMContentLoaded', function() {
+    // Add classes to all form inputs
+    const inputs = document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
+    inputs.forEach(input => {
+        if (input.type !== 'file') {
+            input.classList.add('form-input');
+        } else {
+            input.classList.add('form-input', 'file-input');
+        }
+    });
+    
+    // Add styling for message containers
+    const messages = document.querySelectorAll('.message-success, .message-error');
+    messages.forEach(message => {
+        setTimeout(() => {
+            message.style.opacity = '0';
+            setTimeout(() => {
+                message.remove();
+            }, 300);
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

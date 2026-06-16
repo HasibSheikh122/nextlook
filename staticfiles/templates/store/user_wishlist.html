@@ -1,0 +1,185 @@
+{% extends 'store/base_store.html' %}
+
+{% block title %}My Wishlist - E-Shop{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="p-6 border-b">
+        <div class="flex justify-between items-center flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">My Wishlist</h1>
+                <p class="text-gray-600 mt-1">Products you've saved for later</p>
+            </div>
+            <a href="{% url 'store:shop' %}" 
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-shopping-cart mr-2"></i> Continue Shopping
+            </a>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        {% if wishlist_items %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for item in wishlist_items %}
+                <div class="group bg-white border rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <!-- Product Image -->
+                    <div class="relative overflow-hidden bg-gray-100">
+                        <a href="{% url 'store:product_detail' slug=item.product.slug %}">
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
+                                 class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300">
+                        </a>
+                        
+                        <!-- Quick Actions -->
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <button onclick="removeFromWishlist({{ item.product.id }})" 
+                                    class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition shadow-lg">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Stock Badge -->
+                        {% if not item.product.in_stock or item.product.stock_qty <= 0 %}
+                        <div class="absolute bottom-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                            Out of Stock
+                        </div>
+                        {% elif item.product.stock_qty < 10 %}
+                        <div class="absolute bottom-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                            Only {{ item.product.stock_qty }} left
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Product Info -->
+                    <div class="p-4">
+                        <a href="{% url 'store:product_detail' slug=item.product.slug %}" 
+                           class="block font-semibold text-gray-800 hover:text-indigo-600 transition mb-2">
+                            {{ item.product.title|truncatechars:40 }}
+                        </a>
+                        
+                        <!-- Rating -->
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= item.product.rating|default:0 %}
+                                        <i class="fas fa-star text-xs"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-xs"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="text-xs text-gray-500 ml-2">({{ item.product.rating_count }})</span>
+                        </div>
+                        
+                        <!-- Price -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <span class="text-xl font-bold text-indigo-600">${{ item.product.price|floatformat:2 }}</span>
+                                {% if item.product.old_price %}
+                                    <span class="text-sm text-gray-400 line-through ml-2">${{ item.product.old_price|floatformat:2 }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Add to Cart Button -->
+                        <button onclick="addToCart({{ item.product.id }})" 
+                                {% if not item.product.in_stock or item.product.stock_qty <= 0 %}disabled{% endif %}
+                                class="w-full py-2 rounded-lg transition font-semibold
+                                {% if item.product.in_stock and item.product.stock_qty > 0 %}
+                                    bg-indigo-600 text-white hover:bg-indigo-700
+                                {% else %}
+                                    bg-gray-300 text-gray-500 cursor-not-allowed
+                                {% endif %}">
+                            <i class="fas fa-shopping-cart mr-2"></i> 
+                            {% if item.product.in_stock and item.product.stock_qty > 0 %}
+                                Add to Cart
+                            {% else %}
+                                Out of Stock
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Wishlist Stats -->
+            <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <p class="text-gray-600">Total items in wishlist:</p>
+                        <p class="text-2xl font-bold text-indigo-600">{{ wishlist_items.count }}</p>
+                    </div>
+                    <div>
+                        <button onclick="clearWishlist()" 
+                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                            <i class="fas fa-trash-alt mr-2"></i> Clear Wishlist
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <div class="bg-pink-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-heart text-4xl text-pink-500"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Your wishlist is empty</h3>
+                <p class="text-gray-500 mb-6">Save your favorite items here to buy them later.</p>
+                <div class="space-y-3">
+                    <a href="{% url 'store:shop' %}" 
+                       class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-shopping-cart mr-2"></i> Start Shopping
+                    </a>
+                    <div>
+                        <a href="{% url 'store:user_dashboard' %}" 
+                           class="inline-flex items-center text-indigo-600 hover:text-indigo-700">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function addToCart(productId) {
+    fetch('{% url "store:add_to_cart" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `product_id=${productId}&qty=1`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            updateCartCount();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error adding to cart', 'error');
+    });
+}
+
+function removeFromWishlist(productId) {
+    if (confirm('Remove this item from your wishlist?')) {
+        window.location.href = `{% url "store:remove_from_wishlist" 0 %}`.replace('0', productId);
+    }
+}
+
+function clearWishlist() {
+    if (confirm('Are you sure you want to clear your entire wishlist? This action cannot be undone.')) {
+        // Implement clear all functionality
+        showToast('Wishlist cleared successfully!', 'success');
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
+    }
+}
+</script>
+{% endblock %}
