@@ -73,10 +73,12 @@ WSGI_APPLICATION = 'nextlook.wsgi.application'
 
 
 # Database Configuration
-# DATABASE_URL থাকলে (Render/Neon) সেটি ব্যবহার করবে, না থাকলে SQLite
-if os.environ.get("DATABASE_URL"):
+# env('DATABASE_URL') বা os.environ ব্যবহার করবে
+DATABASE_URL = env('DATABASE_URL', default=os.environ.get("DATABASE_URL"))
+
+if DATABASE_URL:
     DATABASES = {
-        "default": dj_database_url.parse(os.environ.get("DATABASE_URL"))
+        "default": dj_database_url.parse(DATABASE_URL)
     }
 else:
     DATABASES = {
