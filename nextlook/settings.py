@@ -14,12 +14,11 @@ ENVIRONMENT = env('ENVIRONMENT', default='production')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-q_&iom2vs3$x--n(ewo8f$+y0kn5%c)e26&x3==-+r%vnvsxxk')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-q_&iom2vs3$x--n(ewo8f$+y0kn5%c)e26&x3==-+r%vnvsxxk')
 
-# Render-এ পরিবেশ অনুযায়ী DEBUG অটোমেটিক সেট হবে ( Render-এ Environment Variable-এ DEBUG=False দিতে পারেন )
-DEBUG = os.environ.get('DEBUG', 'False') == "True"
+# Render-এ পরিবেশ অনুযায়ী DEBUG অটোমেটিক সেট হবে
+DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 
@@ -27,7 +26,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',           # Admin theme (unfold রিমুভ করা হয়েছে কনফ্লিক্ট এড়াতে)
+    'jazzmin',           # Admin theme
     'userauths',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,8 +54,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'nextlook.urls'
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # .django যোগ করা হয়েছে
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Custom templates directory
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,8 +72,8 @@ WSGI_APPLICATION = 'nextlook.wsgi.application'
 
 
 # Database Configuration
-# env('DATABASE_URL') বা os.environ ব্যবহার করবে
-DATABASE_URL = env('DATABASE_URL', default=os.environ.get("DATABASE_URL"))
+# DATABASE_URL থাকলে Neon DB, না থাকলে লোকাল SQLite3 চলবে
+DATABASE_URL = env('DATABASE_URL', default=None)
 
 if DATABASE_URL:
     DATABASES = {
@@ -121,10 +120,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Cloudinary Config
 cloudinary.config( 
-    cloud_name = "jvlcczqb", 
-    api_key = "782177127123923", 
-    api_secret = "5ekQn49B5G1nrHjP3IOtgbenBuo",
+    cloud_name = env('CLOUDINARY_CLOUD_NAME', default="jvlcczqb"), 
+    api_key = env('CLOUDINARY_API_KEY', default="782177127123923"), 
+    api_secret = env('CLOUDINARY_API_SECRET', default="5ekQn49B5G1nrHjP3IOtgbenBuo"),
     secure=True
 )
 
@@ -139,7 +139,7 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle",
     "welcome_sign": "Welcome To Nexlook Dashboard",
     "copyright": "Nexlook Ltd",
-    "search_model": ["userauths.User", "store.Products"],
+    "search_model": ["userauths.User"],
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
     ],
@@ -162,7 +162,6 @@ JAZZMIN_SETTINGS = {
         "store.Tax": "fas fa-percent",
         "vendor.Vendor": "fas fa-store",
         "userauths.Profile": "fas fa-user",
-        "userauths.User": "fas fa-user",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
