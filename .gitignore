@@ -1,2 +1,3 @@
 /venv
 /build.sh
+db.sqlite3
