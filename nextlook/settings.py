@@ -139,13 +139,13 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle",
     "welcome_sign": "Welcome To Nexlook Dashboard",
     "copyright": "Nexlook Ltd",
-    "search_model": ["auth.User", "store.Products"],
+    "search_model": ["userauths.User", "store.Products"],
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
     ],
     "icons": {
         "auth": "fas fa-user-shield",
-        "auth.user": "fas fa-user",
+        "userauths.User": "fas fa-user",
         "auth.Group": "fas fa-users",
         "store.Product": "fas fa-box-open",
         "store.Category": "fas fa-tags",
