@@ -8,13 +8,14 @@ from vendor.models import Vendor
 from userauths.models import User, Profile
 
 from shortuuid.django_fields import ShortUUIDField
+from cloudinary.models import CloudinaryField
 
 
 # Create your models here.
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
-    image = models.FileField(upload_to="category", default="category.jpg", null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True)
     active = models.BooleanField(default=True)
     slug = models.SlugField(unique=True)
 
@@ -34,7 +35,7 @@ class Product(models.Model):
         ("published","Published"),
     )
     title = models.CharField(max_length=100)
-    image = models.FileField(upload_to="products", default="product.jpg", null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
@@ -115,7 +116,7 @@ class Product(models.Model):
     
 class Gallery(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)  # Changed to CASCADE and allow blank
-    image = models.FileField(upload_to="products", default="product.jpg", null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True)
     active = models.BooleanField(default=True)
     g_id = ShortUUIDField(unique=True, length=10, alphabet="abcdefg12345")
 
@@ -363,8 +364,8 @@ class Banner(models.Model):
     description = models.TextField(blank=True, null=True)
     
     # Images
-    image = models.ImageField(upload_to='banners/', help_text="Main banner image")
-    mobile_image = models.ImageField(upload_to='banners/mobile/', blank=True, null=True, help_text="Mobile version")
+    image = CloudinaryField('image', null=True, blank=True)
+    mobile_image = CloudinaryField('mobile_image', null=True, blank=True, help_text="Mobile version")
     
     # Links and buttons
     button_text = models.CharField(max_length=50, default='Shop Now')

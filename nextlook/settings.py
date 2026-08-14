@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-q_&iom2vs3$x--n(ewo8f$+y0kn5%c)e26&x3==-+r%vnvsxxk'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == "True"
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'nextlook.onrender.com']
 
