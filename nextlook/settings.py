@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-q_&iom2vs3$x--n(ewo8f$+y0kn5%c)e26&x3==-+r%vnvsxxk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'nexlookbd.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'nextlook.onrender.com']
 
 
 # Application definition
