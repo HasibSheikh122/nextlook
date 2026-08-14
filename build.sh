@@ -1,16 +1,24 @@
 #!/bin/bash
-set -o errexit  # Script crash holei execution bondho kore dibe
 
-# Upgrade pip
+# Exit immediately if a command exits with a non-zero status
+set -o errexit
+
+echo "--- Starting Deployment Process ---"
+
+# Upgrade pip to the latest version
+echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Install dependencies
+# Install project dependencies
+echo "Installing dependencies..."
 pip install -r requirements.txt
 
-# Collect static files
+# Collect static files for production
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 # Apply database migrations
-# python manage.py makemigrations --noinput
-
+echo "Applying database migrations..."
 python manage.py migrate --noinput
+
+echo "--- Deployment Finished Successfully! ---"
