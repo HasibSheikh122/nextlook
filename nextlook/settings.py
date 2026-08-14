@@ -53,11 +53,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'nextlook.urls'
-
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # .django যোগ করা হয়েছে
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Custom templates directory
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
