@@ -17,6 +17,11 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
+env = Env()
+env.read_env()
+
+ENVIRONMENT = env('ENVIRONMENT', default='production')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
