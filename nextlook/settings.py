@@ -42,6 +42,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'nextlook.onrender.com']
 
 INSTALLED_APPS = [
     'jazzmin',
+    'userauths',
     'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
