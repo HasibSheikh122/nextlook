@@ -120,11 +120,10 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Cloudinary Config
 cloudinary.config( 
-    cloud_name = env('CLOUDINARY_CLOUD_NAME', default="jvlcczqb"), 
-    api_key = env('CLOUDINARY_API_KEY', default="782177127123923"), 
-    api_secret = env('CLOUDINARY_API_SECRET', default="5ekQn49B5G1nrHjP3IOtgbenBuo"),
+    cloud_name = "jvlcczqb", 
+    api_key = "782177127123923", 
+    api_secret = "5ekQn49B5G1nrHjP3IOtgbenBuo", # Click 'View API Keys' above to copy your API secret
     secure=True
 )
 
