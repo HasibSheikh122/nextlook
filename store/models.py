@@ -1,19 +1,30 @@
+import io
+import os
+import sys
+from io import BytesIO
+
 from django.db import models
 from django.utils.text import slugify
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-
 from vendor.models import Vendor
 from userauths.models import User, Profile
 
 from shortuuid.django_fields import ShortUUIDField
 from cloudinary.models import CloudinaryField
+import cloudinary.uploader
+from PIL import Image
+
+# Safe import for background removal
+try:
+    from rembg import remove
+except ImportError:
+    remove = None
 
 
-# Create your models here.
-
+# ================= Category Model =================
 class Category(models.Model):
     title = models.CharField(max_length=100)
     image = CloudinaryField('image', null=True, blank=True)
@@ -27,36 +38,19 @@ class Category(models.Model):
         verbose_name_plural = "Category"
         ordering = ['title']
 
-import os
-from io import BytesIO
-from django.db import models
-from django.utils.text import slugify
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
-from vendor.models import Vendor
-from userauths.models import User, Profile
-
-from shortuuid.django_fields import ShortUUIDField
-from cloudinary.models import CloudinaryField
-import cloudinary.uploader
-from PIL import Image
-from rembg import remove
-import io
-import sys
-
-
+# ================= Product Model =================
 class Product(models.Model):
     STATUS = (
-        ("draft","Draft"),
-        ("disabled","Disabled"),
-        ("in_review","In Review"),
-        ("published","Published"),
+        ("draft", "Draft"),
+        ("disabled", "Disabled"),
+        ("in_review", "In Review"),
+        ("published", "Published"),
     )
     title = models.CharField(max_length=100)
     image = CloudinaryField('image', null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
     old_price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
     shipping_amount = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
@@ -74,7 +68,6 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-    # ইমেজ ইউআরএল পাওয়ার নিরাপদ মেথড
     def get_image_url(self):
         if self.image:
             try:
@@ -124,7 +117,7 @@ class Product(models.Model):
         return Color.objects.none()
 
     def save(self, *args, **kwargs):
-        # ১. অটো স্লাগ তৈরি
+        # 1. Generate slug
         if not self.slug:
             base_slug = slugify(self.title)
             slug = base_slug
@@ -134,17 +127,15 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
 
-        # ২. ক্লাউডিনারিতে আপলোডের সময় অটো ব্যাকগ্রাউন্ড রিমুভ
-        if self.image and hasattr(self.image, 'file'):
+        # 2. Safe Auto Background Removal with rembg
+        if remove and self.image and hasattr(self.image, 'file'):
             try:
                 input_file = self.image.file
                 input_file.seek(0)
                 input_bytes = input_file.read()
 
-                # AI Background Removal
                 output_bytes = remove(input_bytes)
 
-                # ব্যাকগ্রাউন্ড ছাড়া ইমেজটি সরাসরি Cloudinary-তে আপলোড
                 upload_result = cloudinary.uploader.upload(
                     output_bytes,
                     folder="products_nobg/",
@@ -152,18 +143,20 @@ class Product(models.Model):
                 )
                 self.image = upload_result['public_id']
             except Exception as e:
-                print(f"Error removing background: {e}")
-        
-        # ৩. রেটিং ক্যালকুলেশন
+                print(f"Background removal failed or skipped: {e}")
+
+        # 3. Rating calculation
         if self.pk:
             self.rating = self.product_rating()
         
         super(Product, self).save(*args, **kwargs)
-    
+
+
+# ================= Gallery Model =================
 class Gallery(models.Model):
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', null=True, blank=True)
     image = models.ImageField(upload_to='products/gallery/')
-    is_featured = models.BooleanField(default=False)  # মেইন ইমেজ হিসেবে দেখাতে
+    is_featured = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -179,27 +172,26 @@ class Gallery(models.Model):
         ordering = ['-is_featured', 'created_at']
 
     def save(self, *args, **kwargs):
-        # ইমেজ রিসাইজ করার জন্য
-        if self.image:
-            img = Image.open(self.image)
-            
-            # যদি ইমেজ বড় হয় তাহলে রিসাইজ করুন
-            if img.width > 1200 or img.height > 1200:
-                img.thumbnail((1200, 1200))
+        if self.image and hasattr(self.image, 'file'):
+            try:
+                img = Image.open(self.image)
+                if img.width > 1200 or img.height > 1200:
+                    img.thumbnail((1200, 1200))
+                    
+                output = io.BytesIO()
+                img.save(output, format='JPEG', quality=85, optimize=True)
+                output.seek(0)
                 
-            # ইমেজ কোয়ালিটি কম্প্রেস
-            output = io.BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
-            output.seek(0)
-            
-            self.image = InMemoryUploadedFile(
-                output,
-                'ImageField',
-                f"{self.image.name.split('.')[0]}.jpg",
-                'image/jpeg',
-                sys.getsizeof(output),
-                None
-            )
+                self.image = InMemoryUploadedFile(
+                    output,
+                    'ImageField',
+                    f"{self.image.name.split('.')[0]}.jpg",
+                    'image/jpeg',
+                    sys.getsizeof(output),
+                    None
+                )
+            except Exception as e:
+                print(f"Gallery image optimize error: {e}")
         
         super().save(*args, **kwargs)
 
@@ -207,36 +199,37 @@ class Gallery(models.Model):
         if self.image:
             return self.image.url
         return '/static/images/no-image.png'
-    
-    class Meta:
-        verbose_name_plural = "Product Image"
 
+
+# ================= Specification, Size, Color =================
 class Specification(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)  # Changed to CASCADE
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=1000, null=True, blank=True)
     content = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return self.title if self.title else "Specification"
-    
+
+
 class Size(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)  # Changed to CASCADE
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=1000, null=True, blank=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
 
     def __str__(self):
         return self.name if self.name else "Size"
-    
+
+
 class Color(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)  # Changed to CASCADE
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=1000, null=True, blank=True)
     color_code = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return self.name if self.name else "Color"
-    
 
 
+# ================= Cart & Orders =================
 class Cart(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -255,20 +248,20 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"{self.cart_id} - {self.product.title}"
-    
+
 
 class CartOrder(models.Model):
     PAYMENT_STATUS = (
-        ("paid","Paid"),
-        ("pending","Pending"),
-        ("processing","Processing"),
-        ("cancelled","Cancelled"),
+        ("paid", "Paid"),
+        ("pending", "Pending"),
+        ("processing", "Processing"),
+        ("cancelled", "Cancelled"),
     )
 
     ORDER_STATUS = (
-        ("Pending","Pending"),
-        ("Fullfilled","Fullfilled"),
-        ("Cancelled","Cancelled"),
+        ("Pending", "Pending"),
+        ("Fullfilled", "Fullfilled"),
+        ("Cancelled", "Cancelled"),
     )
     vendor = models.ManyToManyField(Vendor, blank=True)
     buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -280,21 +273,19 @@ class CartOrder(models.Model):
 
     payment_status = models.CharField(choices=PAYMENT_STATUS, max_length=100, default="pending")
     order_status = models.CharField(choices=ORDER_STATUS, max_length=100, default="pending")
-    # Copun 
     initial_total = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
     saved = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
-    # Bio Data
+    
     full_name = models.CharField(max_length=100, null=True, blank=True)
     email = models.CharField(max_length=100, null=True, blank=True)
     mobile = models.CharField(max_length=100, null=True, blank=True)
-    # Shipping Address 
+    
     address = models.CharField(max_length=100, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     state = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
 
     stripe_session_id = models.CharField(max_length=1000, null=True, blank=True)
-
     oid = ShortUUIDField(unique=True, length=10, max_length=25, alphabet="abcdefg12345")
     date = models.DateTimeField(auto_now_add=True)
 
@@ -303,7 +294,7 @@ class CartOrder(models.Model):
     
     def orderitem(self):
         return CartOrderItem.objects.filter(order=self)
-    
+
 
 class CartOrderItem(models.Model):
     order = models.ForeignKey(CartOrder, on_delete=models.CASCADE)
@@ -319,7 +310,6 @@ class CartOrderItem(models.Model):
     size = models.CharField(max_length=100, null=True, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
 
-    # Coupon
     coupon = models.ManyToManyField("store.Coupon", blank=True)
     initial_total = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
     saved = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
@@ -329,8 +319,9 @@ class CartOrderItem(models.Model):
 
     def __str__(self):
         return self.oid
-    
 
+
+# ================= Reviews, FAQ, Wishlist, Notification =================
 class ProductFeq(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -340,21 +331,20 @@ class ProductFeq(models.Model):
     active = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True)
 
-
     def __str__(self):
         return self.question
     
     class Meta:
         verbose_name_plural = "Product FAQs"
 
+
 class Review(models.Model):
     RATTING = (
-        (1,"1 Star"),
-        (2,"2 Star"),
-        (3,"3 Star"),
-        (4,"4 Star"),
-        (5,"5 Star"),
-
+        (1, "1 Star"),
+        (2, "2 Star"),
+        (3, "3 Star"),
+        (4, "4 Star"),
+        (5, "5 Star"),
     )
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True)
@@ -364,21 +354,20 @@ class Review(models.Model):
     active = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True)
 
-    
     def __str__(self):
-        return self.product.title
+        return self.product.title if self.product else "Review"
     
     class Meta:
         verbose_name_plural = "Rating & Reviews"
 
     def profile(self):
         return Profile.objects.get(user=self.user)
-    
+
+
 @receiver(post_save, sender=Review)
 def update_product_rating(sender, instance, **kwargs):
     if instance.product:
         instance.product.save()
-
 
 
 class Wshlist(models.Model):
@@ -388,7 +377,7 @@ class Wshlist(models.Model):
 
     def __str__(self):
         return self.product.title
-    
+
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -401,8 +390,8 @@ class Notification(models.Model):
     def __str__(self):
         if self.order:
             return self.order.oid
-        else:
-            f"Notification - {self.pk}"
+        return f"Notification - {self.pk}"
+
 
 class Coupon(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
@@ -414,12 +403,11 @@ class Coupon(models.Model):
 
     def __str__(self):
         return self.code
-    
 
 
 class Tax(models.Model):
     country = models.CharField(max_length=100)
-    rate = models.IntegerField(default=5, help_text="Number added here are in pecentage e.g 5%")
+    rate = models.IntegerField(default=5, help_text="Number added here are in percentage e.g 5%")
     active = models.BooleanField(default=True)
     data = models.DateTimeField(auto_now_add=True)
 
@@ -430,11 +418,9 @@ class Tax(models.Model):
         verbose_name_plural = "Taxes"
         ordering = ['country']
 
-# models.py - Add this to your store/models.py
 
+# ================= Banner & Newsletter =================
 class Banner(models.Model):
-    """Banner model for home page and other sections"""
-    
     POSITION_CHOICES = (
         ('home', 'Home Page'),
         ('shop', 'Shop Page'),
@@ -446,11 +432,9 @@ class Banner(models.Model):
     subtitle = models.CharField(max_length=300, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     
-    # Images
     image = CloudinaryField('image', null=True, blank=True)
     mobile_image = CloudinaryField('mobile_image', null=True, blank=True, help_text="Mobile version")
     
-    # Links and buttons
     button_text = models.CharField(max_length=50, default='Shop Now')
     button_link = models.CharField(max_length=500, default='/store/shop/')
     button_color = models.CharField(
@@ -466,14 +450,10 @@ class Banner(models.Model):
         default='primary'
     )
     
-    # Display settings
     position = models.CharField(max_length=20, choices=POSITION_CHOICES, default='home')
     order = models.IntegerField(default=0, help_text="Order to display banners")
-    
-    # Status
     active = models.BooleanField(default=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -489,11 +469,9 @@ class Banner(models.Model):
         if self.image:
             return self.image.url
         return '/static/images/default-banner.jpg'
-    
 
 
 class Newsletter(models.Model):
-    """Newsletter subscription model"""
     email = models.EmailField(unique=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -507,6 +485,3 @@ class Newsletter(models.Model):
     
     def __str__(self):
         return self.email
-    
-
-
