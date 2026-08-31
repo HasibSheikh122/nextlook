@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
 from vendor.models import Vendor
@@ -26,6 +27,24 @@ class Category(models.Model):
         verbose_name_plural = "Category"
         ordering = ['title']
 
+import os
+from io import BytesIO
+from django.db import models
+from django.utils.text import slugify
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from vendor.models import Vendor
+from userauths.models import User, Profile
+
+from shortuuid.django_fields import ShortUUIDField
+from cloudinary.models import CloudinaryField
+import cloudinary.uploader
+from PIL import Image
+from rembg import remove
+import io
+import sys
+
 
 class Product(models.Model):
     STATUS = (
@@ -37,7 +56,7 @@ class Product(models.Model):
     title = models.CharField(max_length=100)
     image = CloudinaryField('image', null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
     old_price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
     shipping_amount = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
@@ -46,28 +65,35 @@ class Product(models.Model):
     status = models.CharField(max_length=100, choices=STATUS, default="published")
     featured = models.BooleanField(default=False)
     views = models.PositiveIntegerField(default=0)
-    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, null=True, blank=True)  # Changed to DecimalField
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, null=True, blank=True)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     pid = ShortUUIDField(unique=True, length=10, alphabet="abcdefghijklmnopqrstwxyz")
-    slug = models.SlugField(null=True, blank=True, unique=True)  # Added unique=True
+    slug = models.SlugField(null=True, blank=True, unique=True)
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
-    
+
+    # ইমেজ ইউআরএল পাওয়ার নিরাপদ মেথড
+    def get_image_url(self):
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                return str(self.image)
+        return '/static/images/default-product.png'
+
     def orders(self):
         return CartOrderItem.objects.filter(product=self).count()
     
     def discount_percentage(self):
-        """Calculate discount percentage"""
         if self.old_price and self.old_price > self.price:
             discount = ((self.old_price - self.price) / self.old_price) * 100
             return int(discount)
         return 0
     
     def product_rating(self):
-        """Calculate average rating - safe for unsaved instances"""
-        if self.pk:  # Only query if product is saved
+        if self.pk:
             product_rating = Review.objects.filter(product=self).aggregate(avg_rating=models.Avg("rating"))
             return product_rating['avg_rating'] or 0.00
         return 0.00
@@ -96,9 +122,9 @@ class Product(models.Model):
         if self.pk:
             return Color.objects.filter(product=self)
         return Color.objects.none()
-    
+
     def save(self, *args, **kwargs):
-        # Generate slug if not provided
+        # ১. অটো স্লাগ তৈরি
         if not self.slug:
             base_slug = slugify(self.title)
             slug = base_slug
@@ -107,23 +133,80 @@ class Product(models.Model):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
+
+        # ২. ক্লাউডিনারিতে আপলোডের সময় অটো ব্যাকগ্রাউন্ড রিমুভ
+        if self.image and hasattr(self.image, 'file'):
+            try:
+                input_file = self.image.file
+                input_file.seek(0)
+                input_bytes = input_file.read()
+
+                # AI Background Removal
+                output_bytes = remove(input_bytes)
+
+                # ব্যাকগ্রাউন্ড ছাড়া ইমেজটি সরাসরি Cloudinary-তে আপলোড
+                upload_result = cloudinary.uploader.upload(
+                    output_bytes,
+                    folder="products_nobg/",
+                    format="png"
+                )
+                self.image = upload_result['public_id']
+            except Exception as e:
+                print(f"Error removing background: {e}")
         
-        # Only update rating if product already exists in database
+        # ৩. রেটিং ক্যালকুলেশন
         if self.pk:
             self.rating = self.product_rating()
         
         super(Product, self).save(*args, **kwargs)
     
 class Gallery(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)  # Changed to CASCADE and allow blank
-    image = CloudinaryField('image', null=True, blank=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/gallery/')
+    is_featured = models.BooleanField(default=False)  # মেইন ইমেজ হিসেবে দেখাতে
     active = models.BooleanField(default=True)
-    g_id = ShortUUIDField(unique=True, length=10, alphabet="abcdefg12345")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         if self.product:
-            return self.product.title
-        return f"Gallery {self.g_id}"
+            return f"{self.product.title} - Gallery {self.id}"
+        return f"Gallery {self.id}"
+
+    class Meta:
+        verbose_name = "Product Image"
+        verbose_name_plural = "Product Images"
+        ordering = ['-is_featured', 'created_at']
+
+    def save(self, *args, **kwargs):
+        # ইমেজ রিসাইজ করার জন্য
+        if self.image:
+            img = Image.open(self.image)
+            
+            # যদি ইমেজ বড় হয় তাহলে রিসাইজ করুন
+            if img.width > 1200 or img.height > 1200:
+                img.thumbnail((1200, 1200))
+                
+            # ইমেজ কোয়ালিটি কম্প্রেস
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+            
+            self.image = InMemoryUploadedFile(
+                output,
+                'ImageField',
+                f"{self.image.name.split('.')[0]}.jpg",
+                'image/jpeg',
+                sys.getsizeof(output),
+                None
+            )
+        
+        super().save(*args, **kwargs)
+
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        return '/static/images/no-image.png'
     
     class Meta:
         verbose_name_plural = "Product Image"

@@ -4,6 +4,9 @@
 {% block title %}NexLookBD - Premium Online Shopping{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+
 <style>
     :root {
         --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -11,6 +14,7 @@
         --glass-bg: rgba(255, 255, 255, 0.95);
         --card-shadow: 0 12px 40px rgba(0,0,0,0.06);
         --hover-shadow: 0 20px 45px rgba(0,0,0,0.12);
+        --card-purple: #7822FF;
     }
 
     body { 
@@ -18,82 +22,213 @@
         overflow-x: hidden; 
     }
 
-    /* Product Card */
-    .product-card-3d {
-        background: var(--glass-bg);
-        border: 1px solid rgba(255,255,255,0.3);
-        border-radius: 24px;
-        overflow: hidden;
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
-        box-shadow: var(--card-shadow);
+    /* ================= Custom Card Style ================= */
+    .custom-card-wrapper {
         position: relative;
-        height: 100%;
+        max-width: 270px;
+        margin: 15px auto 25px auto;
+        padding: 20px 6px 25px 6px;
+        transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    .custom-card-wrapper:hover {
+        transform: translateY(-8px);
+    }
+
+    /* Purple backdrop top-right with price */
+    .custom-card-backdrop-top {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 65%;
+        height: 85%;
+        background: var(--card-purple);
+        border-radius: 0 28px 0 0;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 70%);
+        z-index: 1;
+        display: flex;
+        justify-content: flex-end;
+        padding: 16px 18px;
+    }
+
+    .custom-card-price {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    /* Purple backdrop bottom-left */
+    .custom-card-backdrop-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 48px;
+        height: 110px;
+        background: var(--card-purple);
+        border-radius: 0 0 0 16px;
+        clip-path: polygon(0 30%, 100% 0, 100% 85%, 0 100%);
+        z-index: 1;
+    }
+
+    /* Main Front White Card */
+    .custom-product-card {
+        position: relative;
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 18px 16px 22px 16px;
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+        z-index: 2;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
-        perspective: 1200px;
+        min-height: 390px;
+        border: 1px solid #f0f0f0;
     }
 
-    .product-card-3d:hover {
-        transform: translateY(-12px) scale(1.02);
-        box-shadow: var(--hover-shadow);
+    /* Subtle Diagonal Split */
+    .custom-card-split {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--card-purple);
+        clip-path: polygon(38% 0, 100% 0, 100% 75%);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.08;
     }
 
-    .product-card-3d:active { 
-        transform: scale(0.98); 
-    }
-
-    /* Image Container */
-    .img-container-3d {
+    /* Centered Image Container */
+    .custom-card-img-box {
         position: relative;
-        overflow: hidden;
-        background: #f8f9fa;
-        padding: 20px;
-        height: 220px;
+        width: 100%;
+        height: 180px;
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 3;
+        margin: 5px 0 10px 0;
     }
 
-    .product-img-3d {
-        width: 100%;
-        height: 100%;
+    /* Purple Circle Arc - Perfectly Centered Behind Image */
+    .custom-card-arc {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 140px;
+        height: 140px;
+        border: 3.5px solid var(--card-purple);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.85;
+    }
+
+    /* Product Image with Auto Background Blend */
+    .custom-card-img {
+        max-width: 82%;
+        max-height: 150px;
         object-fit: contain;
-        transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-style: preserve-3d;
-    }
-
-    .product-card-3d:hover .product-img-3d {
-        transform: rotateY(360deg) translateZ(30px);
-    }
-    
-    /* Badges */
-    .badge-3d {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        z-index: 5;
-        background: var(--accent-gradient);
-        padding: 6px 14px;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        color: white;
-        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-    }
-
-    .badge-new-3d {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        background: #0d6efd;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 5px 12px;
-        border-radius: 30px;
+        position: relative;
         z-index: 2;
+        filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.15));
+        transition: transform 0.4s ease;
+        mix-blend-mode: multiply; /* ছবির সাদা ব্যাকগ্রাউন্ড থাকলে তা অটো মিশিয়ে ফেলে */
+    }
+
+    .custom-card-wrapper:hover .custom-card-img {
+        transform: scale(1.08) rotate(-3deg);
+    }
+
+    /* Card Content */
+    .custom-card-content {
+        position: relative;
+        z-index: 3;
+        margin-top: auto;
+        text-align: left;
+    }
+
+    .custom-card-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--card-purple);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+
+    .custom-card-desc {
+        font-size: 11px;
+        color: #777777;
+        line-height: 1.4;
+        margin-bottom: 12px;
+        min-height: 30px;
+    }
+
+    /* Dark Button */
+    .custom-btn-cart {
+        display: block;
+        width: 125px;
+        margin: 0 auto;
+        background: linear-gradient(180deg, #373b44 0%, #20232a 100%);
+        color: #ffffff !important;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-align: center;
+        padding: 9px 14px;
+        border-radius: 50px;
+        text-decoration: none;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .custom-btn-cart:hover {
+        background: #000000;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Slider Next/Prev Custom Buttons */
+    .slider-nav-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid var(--card-purple);
+        color: var(--card-purple);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(120, 34, 255, 0.15);
+    }
+
+    .slider-nav-btn:hover {
+        background: var(--card-purple);
+        color: #ffffff;
+        transform: scale(1.05);
+    }
+
+    .slider-nav-btn:disabled,
+    .slider-nav-btn.slick-disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        border-color: #ccc;
+        color: #ccc;
+    }
+
+    /* Slick Slide Margins */
+    .product-slick-slider .slick-slide {
+        padding: 0 8px;
     }
 
     /* Category Grid Layout */
@@ -104,19 +239,19 @@
         padding: 10px;
     }
 
-    /* Category Card */
     .category-card {
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
         background: transparent;
+        text-decoration: none;
+        display: block;
     }
 
     .category-card:hover {
         transform: translateY(-8px);
     }
 
-    /* Image Container - Circular */
     .img-container {
         width: 160px;
         height: 160px;
@@ -134,7 +269,6 @@
         transform: scale(1.05);
     }
 
-    /* Circular Image */
     .category-img-circle {
         width: 100%;
         height: 100%;
@@ -142,11 +276,6 @@
         transition: all 0.4s ease;
     }
 
-    .category-card:hover .category-img-circle {
-        transform: scale(1.1);
-    }
-
-    /* Info Box */
     .category-info-box {
         margin-top: 15px;
         padding: 10px 12px;
@@ -184,29 +313,6 @@
 
     .category-card:hover .category-count {
         color: rgba(255, 255, 255, 0.9);
-    }
-
-    /* Horizontal Scroll */
-    .horizontal-scroll-wrapper {
-        display: flex;
-        gap: 16px;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        padding-bottom: 10px;
-    }
-
-    .horizontal-scroll-wrapper::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
-        background: #d1d1d1;
-        border-radius: 10px;
-    }
-
-    .scroll-product-item {
-        min-width: 220px;
-        flex-shrink: 0;
     }
 
     /* Newsletter */
@@ -251,11 +357,6 @@
         transition: all 0.3s;
     }
 
-    .custom-input-group button:hover {
-        transform: scale(1.05);
-        background: #f8f9fa;
-    }
-
     /* Flash Sale */
     .flash-sale-3d {
         background: var(--accent-gradient);
@@ -266,43 +367,6 @@
         background: rgba(0,0,0,0.2);
         padding: 15px 25px;
         border-radius: 20px;
-    }
-
-    /* Hero Section */
-    .hero-slider-wrapper {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-slider .slick-slide {
-        position: relative;
-        height: 550px;
-    }
-
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(to right, rgba(0,0,0,0.7), transparent);
-        z-index: 1;
-    }
-
-    .hero-content-3d {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        transform: translateY(-50%);
-        padding: 0 15px;
-        z-index: 2;
-    }
-
-    .hero-slider img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
     }
 
     /* Section Title */
@@ -324,86 +388,18 @@
         border-radius: 2px;
     }
 
-    /* Rating Stars */
-    .rating-3d i {
-        color: #ffc107;
-        font-size: 12px;
-    }
-
-    /* Slick Dots Customization */
-    .slick-dots {
-        bottom: 20px;
-        z-index: 10;
-    }
-
-    .slick-dots li button:before {
-        color: white;
-        font-size: 12px;
-        opacity: 0.5;
-    }
-
-    .slick-dots li.slick-active button:before {
-        color: white;
-        opacity: 1;
-    }
-
     /* Mobile Responsive */
     @media (max-width: 768px) {
-        .img-container-3d {
-            height: 170px;
-        }
-        
-        .scroll-product-item {
-            min-width: 170px;
-        }
-        
         .category-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
-        
         .img-container {
             width: 130px;
             height: 130px;
         }
-        
-        .hero-slider .slick-slide {
-            height: 400px;
-        }
-        
         .section-title {
             font-size: 1.5rem;
-        }
-        
-        .timer-3d {
-            padding: 10px 15px;
-        }
-        
-        .timer-3d .display-6 {
-            font-size: 1.5rem;
-        }
-        
-        .category-title {
-            font-size: 13px;
-        }
-        
-        .category-count {
-            font-size: 11px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .img-container {
-            width: 110px;
-            height: 110px;
-        }
-        
-        .category-info-box {
-            padding: 8px 10px;
-        }
-        
-        .category-title {
-            font-size: 12px;
         }
     }
 </style>
@@ -448,7 +444,9 @@
         <div class="category-scroll-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:'50' }}">
             <a class="category-card" href="{% url 'store:category' category.slug %}">
                 <div class="img-container">
+                    {% if category.image %}
                     <img src="{{ category.image.url }}" class="category-img-circle" alt="{{ category.title }}">
+                    {% endif %}
                 </div>
                 <div class="category-info-box">
                     <h6 class="category-title mb-1">{{ category.title }}</h6>
@@ -460,43 +458,54 @@
     </div>
 </div>
 
-<!-- New Arrivals Section -->
+<!-- New Arrivals Section (4 Items Slider with Next/Prev) -->
 {% if new_arrivals %}
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="section-title">New Arrivals</h2>
-        <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-3">View All</a>
+        <div class="d-flex gap-2">
+            <button class="slider-nav-btn prev-new"><i class="fas fa-chevron-left"></i></button>
+            <button class="slider-nav-btn next-new"><i class="fas fa-chevron-right"></i></button>
+        </div>
     </div>
 
-    <div class="horizontal-scroll-wrapper">
+    <div class="product-slick-slider new-arrivals-slider">
         {% for product in new_arrivals %}
-        <div class="scroll-product-item">
-            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
-                <div class="product-card-3d">
-                    <span class="badge-new-3d">New</span>
-                    <div class="img-container-3d">
+        <div>
+            <div class="custom-card-wrapper">
+                <div class="custom-card-backdrop-top">
+                    <span class="custom-card-price">${{ product.price|floatformat:0 }}</span>
+                </div>
+                <div class="custom-card-backdrop-bottom"></div>
+
+                <div class="custom-product-card">
+                    <div class="custom-card-split"></div>
+
+                    <div class="custom-card-img-box">
+                        <div class="custom-card-arc"></div>
                         {% if product.image %}
-                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
+                        <img src="{{ product.image.url }}" class="custom-card-img" alt="{{ product.title }}">
                         {% endif %}
                     </div>
-                    <div class="p-3 text-center">
-                        <h6 class="text-truncate fw-bold mb-1">{{ product.title }}</h6>
-                        <div class="d-flex justify-content-center align-items-center gap-2">
-                            <span class="text-primary fw-bold">${{ product.price|floatformat:0 }}</span>
-                            {% if product.old_price > product.price %}
-                            <span class="text-muted small text-decoration-line-through">${{ product.old_price|floatformat:0 }}</span>
-                            {% endif %}
-                        </div>
+
+                    <div class="custom-card-content">
+                        <h5 class="custom-card-title text-truncate">{{ product.title }}</h5>
+                        <p class="custom-card-desc">
+                            {{ product.description|default:"Lorem ipsum dolor sit amet, ederereli consectetuer adipis."|truncatewords:5 }}
+                        </p>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="custom-btn-cart">
+                            ADD TO CART
+                        </a>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- Flash Sale -->
+<!-- Flash Sale Section (4 Items Slider with Next/Prev) -->
 {% if flash_sale %}
 <div class="container my-5">
     <div class="flash-sale-3d p-4 p-md-5 mb-4">
@@ -526,68 +535,90 @@
         </div>
     </div>
     
-    <div class="row g-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted fw-bold">Limited Time Deals</span>
+        <div class="d-flex gap-2">
+            <button class="slider-nav-btn prev-flash"><i class="fas fa-chevron-left"></i></button>
+            <button class="slider-nav-btn next-flash"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <div class="product-slick-slider flash-sale-slider">
         {% for product in flash_sale %}
-        <div class="col-6 col-lg-2">
-            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
-                <div class="product-card-3d">
-                    <span class="badge-3d">Sale</span>
-                    <div class="img-container-3d">
-                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
+        <div>
+            <div class="custom-card-wrapper">
+                <div class="custom-card-backdrop-top">
+                    <span class="custom-card-price">${{ product.price|floatformat:0 }}</span>
+                </div>
+                <div class="custom-card-backdrop-bottom"></div>
+
+                <div class="custom-product-card">
+                    <div class="custom-card-split"></div>
+
+                    <div class="custom-card-img-box">
+                        <div class="custom-card-arc"></div>
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="custom-card-img" alt="{{ product.title }}">
+                        {% endif %}
                     </div>
-                    <div class="p-3">
-                        <h6 class="text-truncate small fw-bold mb-1">{{ product.title }}</h6>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-primary fw-bold">${{ product.price|floatformat:0 }}</span> 
-                            <span class="text-muted small text-decoration-line-through">${{ product.old_price|floatformat:0 }}</span>
-                        </div>
+
+                    <div class="custom-card-content">
+                        <h5 class="custom-card-title text-truncate">{{ product.title }}</h5>
+                        <p class="custom-card-desc">
+                            {{ product.description|default:"Lorem ipsum dolor sit amet, ederereli consectetuer adipis."|truncatewords:5 }}
+                        </p>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="custom-btn-cart">
+                            ADD TO CART
+                        </a>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- Featured Products -->
+<!-- Featured Products Section (4 Items Slider with Next/Prev) -->
 <div class="container my-5">
-    <div class="text-center mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="section-title">Featured Products</h2>
+        <div class="d-flex gap-2">
+            <button class="slider-nav-btn prev-featured"><i class="fas fa-chevron-left"></i></button>
+            <button class="slider-nav-btn next-featured"><i class="fas fa-chevron-right"></i></button>
+        </div>
     </div>
-    <div class="row g-4">
+
+    <div class="product-slick-slider featured-slider">
         {% for product in featured_products %}
-        <div class="col-6 col-md-4 col-lg-3">
-            <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none">
-                <div class="product-card-3d">
-                    <div class="img-container-3d">
+        <div>
+            <div class="custom-card-wrapper">
+                <div class="custom-card-backdrop-top">
+                    <span class="custom-card-price">${{ product.price|floatformat:0 }}</span>
+                </div>
+                <div class="custom-card-backdrop-bottom"></div>
+
+                <div class="custom-product-card">
+                    <div class="custom-card-split"></div>
+
+                    <div class="custom-card-img-box">
+                        <div class="custom-card-arc"></div>
                         {% if product.image %}
-                        <img src="{{ product.image.url }}" class="product-img-3d" alt="{{ product.title }}">
-                        {% endif %}
-                        {% if product.discount_percentage %}
-                        <span class="badge-3d">-{{ product.discount_percentage }}%</span>
+                        <img src="{{ product.image.url }}" class="custom-card-img" alt="{{ product.title }}">
                         {% endif %}
                     </div>
-                    <div class="p-3 mt-auto text-dark">
-                        <div class="rating-3d small mb-2">
-                            {% with rating=product.average_rating|default:0 %}
-                                {% for i in "12345"|make_list %}
-                                    <i class="{% if forloop.counter <= rating %}fas{% else %}far{% endif %} fa-star"></i>
-                                {% endfor %}
-                            {% endwith %}
-                        </div>
-                        <h6 class="fw-bold text-truncate mb-1">{{ product.title }}</h6>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="price-box">
-                                <span class="fs-5 fw-bold text-primary">${{ product.price }}</span>
-                            </div>
-                            <div class="btn btn-primary btn-sm rounded-circle">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                        </div>
+
+                    <div class="custom-card-content">
+                        <h5 class="custom-card-title text-truncate">{{ product.title }}</h5>
+                        <p class="custom-card-desc">
+                            {{ product.description|default:"Lorem ipsum dolor sit amet, ederereli consectetuer adipis."|truncatewords:5 }}
+                        </p>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="custom-btn-cart">
+                            ADD TO CART
+                        </a>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -613,42 +644,64 @@
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
 
 <script>
 $(document).ready(function() {
-    // Hero Slider
-    if ($('.hero-slider').length > 0) {
-        $('.hero-slider').slick({
-            infinite: true,
-            speed: 1000,
-            fade: true,
-            autoplay: true,
-            autoplaySpeed: 5000,
-            arrows: false,
-            dots: true,
-            pauseOnHover: false,
-            cssEase: 'linear'
-        });
-    }
+    // 4 Items Product Carousel Settings
+    const sliderOptions = {
+        dots: false,
+        infinite: false,
+        speed: 500,
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        arrows: false,
+        responsive: [
+            {
+                breakpoint: 1200,
+                settings: {
+                    slidesToShow: 3,
+                    slidesToScroll: 1
+                }
+            },
+            {
+                breakpoint: 768,
+                settings: {
+                    slidesToShow: 2,
+                    slidesToScroll: 1
+                }
+            },
+            {
+                breakpoint: 500,
+                settings: {
+                    slidesToShow: 1,
+                    slidesToScroll: 1
+                }
+            }
+        ]
+    };
 
-    // Countdown Timer - FIXED VERSION
+    // Initialize New Arrivals Slider
+    const newArrivals = $('.new-arrivals-slider').slick(sliderOptions);
+    $('.prev-new').click(() => newArrivals.slick('slickPrev'));
+    $('.next-new').click(() => newArrivals.slick('slickNext'));
+
+    // Initialize Flash Sale Slider
+    const flashSale = $('.flash-sale-slider').slick(sliderOptions);
+    $('.prev-flash').click(() => flashSale.slick('slickPrev'));
+    $('.next-flash').click(() => flashSale.slick('slickNext'));
+
+    // Initialize Featured Products Slider
+    const featured = $('.featured-slider').slick(sliderOptions);
+    $('.prev-featured').click(() => featured.slick('slickPrev'));
+    $('.next-featured').click(() => featured.slick('slickNext'));
+
+    // Countdown Timer
     function startTimer() {
         var endTimeStr = "{{ flash_sale_end_time|date:'Y-m-d H:i:s' }}";
-        
-        if (!endTimeStr || endTimeStr === "") {
-            console.log("No end time provided");
-            return;
-        }
+        if (!endTimeStr) return;
         
         var endTime = new Date(endTimeStr).getTime();
-        
-        // Check if endTime is valid
-        if (isNaN(endTime)) {
-            console.log("Invalid end time");
-            return;
-        }
+        if (isNaN(endTime)) return;
         
         var timerInterval = setInterval(function() {
             var now = new Date().getTime();
@@ -656,9 +709,9 @@ $(document).ready(function() {
 
             if (diff < 0) {
                 clearInterval(timerInterval);
-                document.getElementById("hours").innerText = "00";
-                document.getElementById("minutes").innerText = "00";
-                document.getElementById("seconds").innerText = "00";
+                $("#hours").text("00");
+                $("#minutes").text("00");
+                $("#seconds").text("00");
                 return;
             }
 
@@ -666,21 +719,15 @@ $(document).ready(function() {
             var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             var seconds = Math.floor((diff % (1000 * 60)) / 1000);
             
-            document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
-            document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
-            document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
+            $("#hours").text(hours.toString().padStart(2, '0'));
+            $("#minutes").text(minutes.toString().padStart(2, '0'));
+            $("#seconds").text(seconds.toString().padStart(2, '0'));
         }, 1000);
     }
     
-    // Start timer if element exists
     if(document.getElementById("hours")) {
         startTimer();
     }
-    
-    // Category card click handler
-    $('.category-card').on('click', function() {
-        window.location.href = $(this).data('url');
-    });
 });
 </script>
 {% endblock %}

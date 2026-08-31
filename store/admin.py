@@ -69,12 +69,15 @@ class ProductAdmin(admin.ModelAdmin):
         return "No Image"
     display_image.short_description = 'Preview'
 
-@admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'product', 'active']
-    list_filter = ['active', 'product']
-    search_fields = ['product__title']
+    # list_display-এর ভেতর 'active' ফিল্ডটি যোগ করুন
+    list_display = ['product', 'image', 'active', 'created_at'] 
+    
+    # editable ফিল্ড
     list_editable = ['active']
+    
+    # ফিল্টার অপশন (প্রয়োজন হলে)
+    list_filter = ['active', 'created_at']
 
 @admin.register(Specification)
 class SpecificationAdmin(admin.ModelAdmin):
